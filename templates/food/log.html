@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}Log Food - Food Planner{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">
+            <i class="fas fa-plus text-primary me-2"></i>
+            Log Food
+        </h2>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Search for Food</h5>
+            </div>
+            <div class="card-body">
+                <!-- Search Methods -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <i class="fas fa-barcode fa-3x text-primary mb-3"></i>
+                                <h6>Scan Barcode</h6>
+                                <input type="text" id="upc-input" class="form-control mb-2" placeholder="Enter UPC code">
+                                <button class="btn btn-primary" id="scan-barcode">
+                                    <i class="fas fa-search me-1"></i>Search UPC
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <i class="fas fa-search fa-3x text-success mb-3"></i>
+                                <h6>Search by Name</h6>
+                                <input type="text" id="name-input" class="form-control mb-2" placeholder="Enter food name">
+                                <button class="btn btn-success" id="search-name">
+                                    <i class="fas fa-search me-1"></i>Search Name
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Search Results -->
+                <div id="search-results"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Log Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="quantity-input" class="form-label">Quantity (grams)</label>
+                    <input type="number" id="quantity-input" class="form-control" min="1" value="100">
+                </div>
+                
+                <div class="mb-3">
+                    <label for="meal-type-select" class="form-label">Meal Type</label>
+                    <select id="meal-type-select" class="form-select">
+                        <option value="breakfast">Breakfast</option>
+                        <option value="lunch">Lunch</option>
+                        <option value="dinner">Dinner</option>
+                        <option value="snack">Snack</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="notes-input" class="form-label">Notes (optional)</label>
+                    <textarea id="notes-input" class="form-control" rows="3"></textarea>
+                </div>
+                
+                <div class="text-center">
+                    <a href="{{ url_for('food.add_custom') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-plus me-1"></i>Add Custom Food
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('food.history') }}" class="btn btn-outline-info">
+                        <i class="fas fa-history me-1"></i>View History
+                    </a>
+                    <a href="{{ url_for('dashboard.main') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-home me-1"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const upcInput = document.getElementById('upc-input');
+    const nameInput = document.getElementById('name-input');
+    const scanButton = document.getElementById('scan-barcode');
+    const searchButton = document.getElementById('search-name');
+    
+    // UPC search
+    scanButton.addEventListener('click', function() {
+        const upc = upcInput.value.trim();
+        if (upc) {
+            searchFoodByUPC(upc);
+        } else {
+            alert('Please enter a UPC code');
+        }
+    });
+    
+    // Name search
+    searchButton.addEventListener('click', function() {
+        const name = nameInput.value.trim();
+        if (name) {
+            searchFoodByName(name);
+        } else {
+            alert('Please enter a food name');
+        }
+    });
+    
+    // Enter key support
+    upcInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            scanButton.click();
+        }
+    });
+    
+    nameInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            searchButton.click();
+        }
+    });
+});
+
+async function searchFoodByName(name) {
+    const resultsDiv = document.getElementById('search-results');
+    resultsDiv.innerHTML = '<div class="spinner"></div>';
+    
+    try {
+        const response = await fetch(`/api/food/search-name?q=${encodeURIComponent(name)}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            displayFoodSearchResults(data.foods);
+        } else {
+            resultsDiv.innerHTML = `<div class="alert alert-warning">${data.message}</div>`;
+        }
+    } catch (error) {
+        resultsDiv.innerHTML = '<div class="alert alert-danger">Error searching for food. Please try again.</div>';
+        console.error('Error searching food:', error);
+    }
+}
+</script>
+{% endblock %}

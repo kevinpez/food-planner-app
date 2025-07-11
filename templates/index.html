@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome to Food Planner{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto text-center">
+        <h1 class="display-4 mb-4">
+            <i class="fas fa-utensils text-primary"></i>
+            AI-Powered Food Planner
+        </h1>
+        <p class="lead mb-4">
+            Track your nutrition, scan barcodes, and get personalized meal recommendations 
+            powered by artificial intelligence.
+        </p>
+        
+        <div class="row mb-5">
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <i class="fas fa-barcode fa-3x text-primary mb-3"></i>
+                        <h5 class="card-title">UPC Scanning</h5>
+                        <p class="card-text">
+                            Quickly log foods by scanning barcodes or searching our extensive database.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <i class="fas fa-robot fa-3x text-success mb-3"></i>
+                        <h5 class="card-title">AI Recommendations</h5>
+                        <p class="card-text">
+                            Get personalized meal suggestions based on your dietary preferences and health goals.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <i class="fas fa-chart-line fa-3x text-info mb-3"></i>
+                        <h5 class="card-title">Nutrition Analytics</h5>
+                        <p class="card-text">
+                            Track your daily nutrition intake with detailed analytics and progress monitoring.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mb-4">
+            <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg me-3">
+                <i class="fas fa-user-plus"></i> Get Started
+            </a>
+            <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary btn-lg">
+                <i class="fas fa-sign-in-alt"></i> Login
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-lg-10 mx-auto">
+        <h2 class="text-center mb-4">How It Works</h2>
+        <div class="row">
+            <div class="col-md-3 text-center mb-4">
+                <div class="step-number">1</div>
+                <h5>Sign Up</h5>
+                <p>Create your account and set your nutritional goals.</p>
+            </div>
+            <div class="col-md-3 text-center mb-4">
+                <div class="step-number">2</div>
+                <h5>Log Foods</h5>
+                <p>Scan barcodes or search for foods to log your meals.</p>
+            </div>
+            <div class="col-md-3 text-center mb-4">
+                <div class="step-number">3</div>
+                <h5>Get AI Insights</h5>
+                <p>Receive personalized meal recommendations and tips.</p>
+            </div>
+            <div class="col-md-3 text-center mb-4">
+                <div class="step-number">4</div>
+                <h5>Track Progress</h5>
+                <p>Monitor your nutrition and achieve your health goals.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.step-number {
+    width: 60px;
+    height: 60px;
+    background-color: #0d6efd;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: bold;
+    margin: 0 auto 15px;
+}
+</style>
+{% endblock %}

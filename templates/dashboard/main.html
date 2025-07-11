@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Food Planner{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">
+            <i class="fas fa-home text-primary me-2"></i>
+            Welcome back, {{ current_user.username }}!
+        </h2>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Today's Summary -->
+    <div class="col-md-6 col-lg-3">
+        <div class="stat-card">
+            <h3>{{ "%.0f"|format(total_calories) }}</h3>
+            <p>Calories Today</p>
+            <div class="progress mt-2">
+                <div class="progress-bar" role="progressbar" 
+                     style="width: {{ (total_calories / calorie_goal * 100) | round(1) }}%"
+                     aria-valuenow="{{ total_calories }}" 
+                     aria-valuemin="0" 
+                     aria-valuemax="{{ calorie_goal }}">
+                </div>
+            </div>
+            <small>Goal: {{ calorie_goal }} calories</small>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-3">
+        <div class="stat-card">
+            <h3>{{ today_logs|length }}</h3>
+            <p>Items Logged</p>
+            <small>Today</small>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-3">
+        <div class="stat-card">
+            <h3>{{ week_summary|length }}</h3>
+            <p>Active Days</p>
+            <small>This week</small>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-3">
+        <div class="stat-card">
+            <h3>{{ recent_recommendations|length }}</h3>
+            <p>AI Recommendations</p>
+            <small>Available</small>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <!-- Today's Food Log -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-utensils me-2"></i>Today's Food Log
+                </h5>
+                <a href="{{ url_for('food.log') }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus me-1"></i>Add Food
+                </a>
+            </div>
+            <div class="card-body">
+                {% if today_logs %}
+                    {% for meal_type in ['breakfast', 'lunch', 'dinner', 'snack'] %}
+                        {% set meal_logs = today_logs | selectattr('meal_type', 'equalto', meal_type) | list %}
+                        {% if meal_logs %}
+                            <h6 class="mt-3 mb-2">
+                                <span class="meal-badge {{ meal_type }}">{{ meal_type|title }}</span>
+                            </h6>
+                            {% for log in meal_logs %}
+                                <div class="food-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6>{{ log.food.name }}</h6>
+                                            <small class="text-muted">
+                                                {{ log.quantity }}g • {{ log.food.brand or 'Unknown brand' }}
+                                            </small>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="calories-badge">{{ "%.0f"|format(log.get_calories()) }} cal</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-utensils fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No food logged today. Start tracking your meals!</p>
+                        <a href="{{ url_for('food.log') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>Log Your First Meal
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- AI Recommendations -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-robot me-2"></i>AI Recommendations
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if recent_recommendations %}
+                    {% for recommendation in recent_recommendations %}
+                        <div class="ai-recommendation">
+                            <h6>{{ recommendation.recommendation_type|title }} Suggestion</h6>
+                            <p>{{ recommendation.recommendation_text }}</p>
+                            <small>{{ recommendation.created_at.strftime('%B %d, %Y') }}</small>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-robot fa-2x text-muted mb-2"></i>
+                        <p class="text-muted mb-2">No recommendations yet</p>
+                        <button class="btn btn-primary btn-sm" id="ai-recommend-btn">
+                            <i class="fas fa-robot me-1"></i>Get AI Suggestion
+                        </button>
+                    </div>
+                {% endif %}
+                
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('dashboard.ai_recommendations') }}" class="btn btn-outline-primary btn-sm">
+                        View All Recommendations
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt me-2"></i>Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('food.log') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-plus me-2"></i>Log Food
+                    </a>
+                    <a href="{{ url_for('dashboard.meal_planner') }}" class="btn btn-outline-success">
+                        <i class="fas fa-calendar me-2"></i>Plan Meals
+                    </a>
+                    <a href="{{ url_for('dashboard.nutrition') }}" class="btn btn-outline-info">
+                        <i class="fas fa-chart-bar me-2"></i>View Nutrition
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Weekly Overview -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-calendar-week me-2"></i>This Week's Overview
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if week_summary %}
+                    <div class="row">
+                        {% for date, data in week_summary.items() %}
+                            <div class="col-md-3 mb-3">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <h6>{{ date.strftime('%a, %b %d') }}</h6>
+                                        <p class="mb-1">{{ "%.0f"|format(data.calories) }} cal</p>
+                                        <small class="text-muted">{{ data.meals }} items</small>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-calendar-week fa-2x text-muted mb-2"></i>
+                        <p class="text-muted">Start logging food to see your weekly overview</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="ai-recommendations" class="mt-3"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize any dashboard-specific functionality
+    console.log('Dashboard loaded');
+});
+</script>
+{% endblock %}
