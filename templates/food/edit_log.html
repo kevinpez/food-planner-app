@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Food Log - Food Planner{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0">
+                    <i class="fas fa-edit text-primary me-2"></i>
+                    Edit Food Log
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <strong>{{ food_log.food.name }}</strong>
+                    {% if food_log.food.brand %}
+                        <br><small class="text-muted">{{ food_log.food.brand }}</small>
+                    {% endif %}
+                </div>
+                
+                <form method="POST">
+                    {{ csrf_token() }}
+                    
+                    <div class="mb-3">
+                        <label for="quantity" class="form-label">Quantity (grams)</label>
+                        <input type="number" class="form-control" id="quantity" name="quantity" 
+                               value="{{ food_log.quantity }}" min="1" step="0.1" required>
+                        <div class="form-text">
+                            Current: {{ food_log.quantity }}g = {{ "%.0f"|format(food_log.get_calories()) }} calories
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="meal_type" class="form-label">Meal Type</label>
+                        <select class="form-select" id="meal_type" name="meal_type" required>
+                            <option value="breakfast" {{ 'selected' if food_log.meal_type == 'breakfast' }}>Breakfast</option>
+                            <option value="lunch" {{ 'selected' if food_log.meal_type == 'lunch' }}>Lunch</option>
+                            <option value="dinner" {{ 'selected' if food_log.meal_type == 'dinner' }}>Dinner</option>
+                            <option value="snack" {{ 'selected' if food_log.meal_type == 'snack' }}>Snack</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notes (optional)</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3">{{ food_log.notes or '' }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            <strong>Originally logged:</strong> {{ food_log.logged_at.strftime('%B %d, %Y at %I:%M %p') }}
+                        </small>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('food.history') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">Nutrition Information</h5>
+            </div>
+            <div class="card-body">
+                {% set nutrition = food_log.food.get_nutrition_data() %}
+                {% if nutrition %}
+                    <div class="row text-center">
+                        {% if nutrition.get('calories_per_100g') %}
+                            <div class="col-6 col-md-3 mb-2">
+                                <strong>{{ nutrition.calories_per_100g }}</strong>
+                                <br><small class="text-muted">Calories/100g</small>
+                            </div>
+                        {% endif %}
+                        
+                        {% if nutrition.get('protein_per_100g') %}
+                            <div class="col-6 col-md-3 mb-2">
+                                <strong>{{ nutrition.protein_per_100g }}g</strong>
+                                <br><small class="text-muted">Protein/100g</small>
+                            </div>
+                        {% endif %}
+                        
+                        {% if nutrition.get('carbs_per_100g') %}
+                            <div class="col-6 col-md-3 mb-2">
+                                <strong>{{ nutrition.carbs_per_100g }}g</strong>
+                                <br><small class="text-muted">Carbs/100g</small>
+                            </div>
+                        {% endif %}
+                        
+                        {% if nutrition.get('fat_per_100g') %}
+                            <div class="col-6 col-md-3 mb-2">
+                                <strong>{{ nutrition.fat_per_100g }}g</strong>
+                                <br><small class="text-muted">Fat/100g</small>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center">No detailed nutrition information available</p>
+                {% endif %}
+                
+                {% if food_log.food.ingredients %}
+                    <hr>
+                    <h6>Ingredients</h6>
+                    <p class="small">{{ food_log.food.ingredients }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Update calorie calculation when quantity changes
+document.getElementById('quantity').addEventListener('input', function() {
+    const quantity = parseFloat(this.value) || 0;
+    const caloriesPer100g = {{ nutrition.get('calories_per_100g', 0) }};
+    const totalCalories = (caloriesPer100g * quantity) / 100;
+    
+    const helpText = this.nextElementSibling;
+    helpText.textContent = `${quantity}g = ${Math.round(totalCalories)} calories`;
+});
+</script>
+{% endblock %}

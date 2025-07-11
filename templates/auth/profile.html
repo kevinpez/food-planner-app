@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - Food Planner{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0">
+                    <i class="fas fa-user text-primary me-2"></i>
+                    Your Profile
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Account Information</h5>
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Username:</strong></td>
+                                <td>{{ user.username }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Email:</strong></td>
+                                <td>{{ user.email }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Member Since:</strong></td>
+                                <td>{{ user.created_at.strftime('%B %d, %Y') }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h5>Nutrition Preferences</h5>
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Daily Calorie Goal:</strong></td>
+                                <td>{{ user.daily_calorie_goal }} calories</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Preferred Cuisine:</strong></td>
+                                <td>{{ user.preferred_cuisine or 'Not specified' }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Dietary Restrictions:</strong></td>
+                                <td>
+                                    {% set restrictions = user.get_dietary_restrictions() %}
+                                    {% if restrictions %}
+                                        {{ restrictions | join(', ') }}
+                                    {% else %}
+                                        None specified
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('dashboard.main') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                    </a>
+                    <a href="{{ url_for('auth.edit_profile') }}" class="btn btn-primary">
+                        <i class="fas fa-edit me-1"></i>Edit Profile
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">Quick Stats</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <h4>{{ user.food_logs.count() }}</h4>
+                            <p>Foods Logged</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <h4>{{ user.ai_recommendations.count() }}</h4>
+                            <p>AI Recommendations</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <h4>{{ user.daily_plans.count() }}</h4>
+                            <p>Meal Plans</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <h4>{{ (user.created_at.today() - user.created_at.date()).days + 1 }}</h4>
+                            <p>Days Active</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

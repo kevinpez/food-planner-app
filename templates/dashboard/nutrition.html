@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}Nutrition Analytics - Food Planner{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">
+            <i class="fas fa-chart-bar text-primary me-2"></i>
+            Nutrition Analytics
+        </h2>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Time Period</h5>
+                    <div class="btn-group" role="group">
+                        <a href="{{ url_for('dashboard.nutrition', days=7) }}" 
+                           class="btn btn-sm {{ 'btn-primary' if days == 7 else 'btn-outline-primary' }}">
+                            7 Days
+                        </a>
+                        <a href="{{ url_for('dashboard.nutrition', days=30) }}" 
+                           class="btn btn-sm {{ 'btn-primary' if days == 30 else 'btn-outline-primary' }}">
+                            30 Days
+                        </a>
+                        <a href="{{ url_for('dashboard.nutrition', days=90) }}" 
+                           class="btn btn-sm {{ 'btn-primary' if days == 90 else 'btn-outline-primary' }}">
+                            90 Days
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Daily Nutrition Trends
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if nutrition_data %}
+                    <div id="nutrition-chart" style="height: 400px;"></div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No nutrition data available for this period.</p>
+                        <a href="{{ url_for('food.log') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>Start Logging Food
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-bullseye me-2"></i>
+                    Daily Averages
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if nutrition_data %}
+                    {% set total_days = nutrition_data|length %}
+                    {% set total_calories = nutrition_data.values()|sum(attribute='calories') %}
+                    {% set avg_calories = (total_calories / total_days) if total_days > 0 else 0 %}
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Average Calories</span>
+                            <strong>{{ "%.0f"|format(avg_calories) }}</strong>
+                        </div>
+                        <div class="progress mt-1">
+                            <div class="progress-bar" style="width: {{ (avg_calories / current_user.daily_calorie_goal * 100)|round(1) }}%"></div>
+                        </div>
+                        <small class="text-muted">Goal: {{ current_user.daily_calorie_goal }} calories</small>
+                    </div>
+                    
+                    {% set total_protein = nutrition_data.values()|sum(attribute='protein') %}
+                    {% set avg_protein = (total_protein / total_days) if total_days > 0 else 0 %}
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Average Protein</span>
+                            <strong>{{ "%.1f"|format(avg_protein) }}g</strong>
+                        </div>
+                    </div>
+                    
+                    {% set total_carbs = nutrition_data.values()|sum(attribute='carbs') %}
+                    {% set avg_carbs = (total_carbs / total_days) if total_days > 0 else 0 %}
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Average Carbs</span>
+                            <strong>{{ "%.1f"|format(avg_carbs) }}g</strong>
+                        </div>
+                    </div>
+                    
+                    {% set total_fat = nutrition_data.values()|sum(attribute='fat') %}
+                    {% set avg_fat = (total_fat / total_days) if total_days > 0 else 0 %}
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Average Fat</span>
+                            <strong>{{ "%.1f"|format(avg_fat) }}g</strong>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="text-center">
+                        <h6>Period Summary</h6>
+                        <p class="mb-1"><strong>{{ total_days }}</strong> days tracked</p>
+                        <p class="mb-1"><strong>{{ "%.0f"|format(total_calories) }}</strong> total calories</p>
+                        <p class="mb-0"><small class="text-muted">{{ start_date.strftime('%B %d') }} - {{ end_date.strftime('%B %d, %Y') }}</small></p>
+                    </div>
+                {% else %}
+                    <div class="text-center">
+                        <i class="fas fa-chart-pie fa-2x text-muted mb-2"></i>
+                        <p class="text-muted">Start logging food to see your nutrition analytics</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    Nutrition Tips
+                </h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <i class="fas fa-leaf text-success me-2"></i>
+                        Aim for 5-9 servings of fruits and vegetables daily
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-glass-whiskey text-info me-2"></i>
+                        Drink at least 8 glasses of water per day
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-fish text-warning me-2"></i>
+                        Include lean protein in every meal
+                    </li>
+                    <li class="mb-0">
+                        <i class="fas fa-bread-slice text-secondary me-2"></i>
+                        Choose whole grains over refined grains
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
+{% if nutrition_data %}
+document.addEventListener('DOMContentLoaded', function() {
+    const nutritionData = {{ nutrition_data|tojson }};
+    
+    const dates = Object.keys(nutritionData).sort();
+    const calories = dates.map(date => nutritionData[date].calories);
+    const protein = dates.map(date => nutritionData[date].protein);
+    const carbs = dates.map(date => nutritionData[date].carbs);
+    const fat = dates.map(date => nutritionData[date].fat);
+    
+    const calorieTrace = {
+        x: dates,
+        y: calories,
+        type: 'scatter',
+        mode: 'lines+markers',
+        name: 'Calories',
+        line: {color: '#0d6efd'}
+    };
+    
+    const goalTrace = {
+        x: dates,
+        y: Array(dates.length).fill({{ current_user.daily_calorie_goal }}),
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Calorie Goal',
+        line: {color: '#dc3545', dash: 'dash'}
+    };
+    
+    const layout = {
+        title: 'Daily Calorie Intake',
+        xaxis: {title: 'Date'},
+        yaxis: {title: 'Calories'},
+        showlegend: true,
+        margin: {t: 40, r: 40, b: 40, l: 60}
+    };
+    
+    Plotly.newPlot('nutrition-chart', [calorieTrace, goalTrace], layout, {responsive: true});
+});
+{% endif %}
+</script>
+{% endblock %}

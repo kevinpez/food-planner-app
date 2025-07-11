@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}About - Food Planner{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="text-center mb-4">
+                    <i class="fas fa-info-circle text-primary me-2"></i>
+                    About Food Planner
+                </h2>
+                
+                <p class="lead text-center mb-4">
+                    An AI-powered nutrition tracking application that helps you make healthier food choices.
+                </p>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h4><i class="fas fa-target text-success me-2"></i>Our Mission</h4>
+                        <p>
+                            To empower individuals to make informed nutrition decisions through intelligent 
+                            food tracking, barcode scanning, and personalized AI recommendations.
+                        </p>
+                        
+                        <h4><i class="fas fa-cogs text-info me-2"></i>How It Works</h4>
+                        <ul>
+                            <li>Scan UPC barcodes for instant food recognition</li>
+                            <li>Track daily nutrition with detailed analytics</li>
+                            <li>Get AI-powered meal recommendations</li>
+                            <li>Plan meals and monitor progress</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h4><i class="fas fa-database text-warning me-2"></i>Data Sources</h4>
+                        <ul>
+                            <li><strong>Open Food Facts:</strong> Comprehensive food database</li>
+                            <li><strong>Anthropic Claude:</strong> AI meal recommendations</li>
+                            <li><strong>User Input:</strong> Custom food entries</li>
+                        </ul>
+                        
+                        <h4><i class="fas fa-shield-alt text-danger me-2"></i>Privacy & Security</h4>
+                        <p>
+                            Your data is secure with industry-standard encryption, CSRF protection, 
+                            and no sharing with third parties. You own your nutrition data.
+                        </p>
+                    </div>
+                </div>
+                
+                <hr class="my-4">
+                
+                <div class="text-center">
+                    <h4>Ready to Start Your Nutrition Journey?</h4>
+                    {% if not current_user.is_authenticated %}
+                        <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg me-2">
+                            <i class="fas fa-user-plus"></i> Get Started
+                        </a>
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary btn-lg">
+                            <i class="fas fa-sign-in-alt"></i> Login
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('dashboard.main') }}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-tachometer-alt"></i> Go to Dashboard
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

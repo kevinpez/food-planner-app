@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Profile - Food Planner{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0">
+                    <i class="fas fa-edit text-primary me-2"></i>
+                    Edit Profile
+                </h3>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ csrf_token() }}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Nutrition Goals</h5>
+                            
+                            <div class="mb-3">
+                                <label for="daily_calorie_goal" class="form-label">Daily Calorie Goal</label>
+                                <input type="number" class="form-control" id="daily_calorie_goal" 
+                                       name="daily_calorie_goal" value="{{ user.daily_calorie_goal }}" 
+                                       min="1000" max="5000" required>
+                                <div class="form-text">Recommended: 1,500-3,000 calories per day</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="preferred_cuisine" class="form-label">Preferred Cuisine</label>
+                                <select class="form-select" id="preferred_cuisine" name="preferred_cuisine">
+                                    <option value="">No preference</option>
+                                    <option value="Mediterranean" {{ 'selected' if user.preferred_cuisine == 'Mediterranean' }}>Mediterranean</option>
+                                    <option value="Asian" {{ 'selected' if user.preferred_cuisine == 'Asian' }}>Asian</option>
+                                    <option value="Mexican" {{ 'selected' if user.preferred_cuisine == 'Mexican' }}>Mexican</option>
+                                    <option value="Italian" {{ 'selected' if user.preferred_cuisine == 'Italian' }}>Italian</option>
+                                    <option value="American" {{ 'selected' if user.preferred_cuisine == 'American' }}>American</option>
+                                    <option value="Indian" {{ 'selected' if user.preferred_cuisine == 'Indian' }}>Indian</option>
+                                    <option value="Middle Eastern" {{ 'selected' if user.preferred_cuisine == 'Middle Eastern' }}>Middle Eastern</option>
+                                    <option value="Other" {{ 'selected' if user.preferred_cuisine == 'Other' }}>Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h5>Dietary Restrictions</h5>
+                            {% set user_restrictions = user.get_dietary_restrictions() %}
+                            
+                            <div class="mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="dietary_restrictions" 
+                                           value="vegetarian" id="vegetarian"
+                                           {{ 'checked' if 'vegetarian' in user_restrictions }}>
+                                    <label class="form-check-label" for="vegetarian">Vegetarian</label>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="dietary_restrictions" 
+                                           value="vegan" id="vegan"
+                                           {{ 'checked' if 'vegan' in user_restrictions }}>
+                                    <label class="form-check-label" for="vegan">Vegan</label>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="dietary_restrictions" 
+                                           value="gluten-free" id="gluten-free"
+                                           {{ 'checked' if 'gluten-free' in user_restrictions }}>
+                                    <label class="form-check-label" for="gluten-free">Gluten-Free</label>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="dietary_restrictions" 
+                                           value="dairy-free" id="dairy-free"
+                                           {{ 'checked' if 'dairy-free' in user_restrictions }}>
+                                    <label class="form-check-label" for="dairy-free">Dairy-Free</label>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="dietary_restrictions" 
+                                           value="keto" id="keto"
+                                           {{ 'checked' if 'keto' in user_restrictions }}>
+                                    <label class="form-check-label" for="keto">Ketogenic</label>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="dietary_restrictions" 
+                                           value="paleo" id="paleo"
+                                           {{ 'checked' if 'paleo' in user_restrictions }}>
+                                    <label class="form-check-label" for="paleo">Paleo</label>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="dietary_restrictions" 
+                                           value="low-carb" id="low-carb"
+                                           {{ 'checked' if 'low-carb' in user_restrictions }}>
+                                    <label class="form-check-label" for="low-carb">Low-Carb</label>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="dietary_restrictions" 
+                                           value="halal" id="halal"
+                                           {{ 'checked' if 'halal' in user_restrictions }}>
+                                    <label class="form-check-label" for="halal">Halal</label>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="dietary_restrictions" 
+                                           value="kosher" id="kosher"
+                                           {{ 'checked' if 'kosher' in user_restrictions }}>
+                                    <label class="form-check-label" for="kosher">Kosher</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('auth.profile') }}" class="btn btn-secondary">
+                            <i class="fas fa-times me-1"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

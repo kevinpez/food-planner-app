@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics - Food Planner{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">
+            <i class="fas fa-chart-line text-primary me-2"></i>
+            Analytics & Insights
+        </h2>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stat-card">
+            <h3>{{ "%.0f"|format(avg_daily_calories) }}</h3>
+            <p>Average Daily Calories</p>
+            <small>Goal: {{ calorie_goal }}</small>
+        </div>
+    </div>
+    
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stat-card">
+            <h3>{{ total_days }}</h3>
+            <p>Days Tracked</p>
+            <small>Last 30 days</small>
+        </div>
+    </div>
+    
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stat-card">
+            <h3>{{ meal_patterns.values()|sum }}</h3>
+            <p>Total Meals Logged</p>
+            <small>All meal types</small>
+        </div>
+    </div>
+    
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stat-card">
+            <h3>{{ "%.1f"|format(avg_daily_calories / calorie_goal * 100) }}%</h3>
+            <p>Goal Achievement</p>
+            <small>Average daily progress</small>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-area me-2"></i>
+                    Daily Calorie Trends
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if chart_data.dates %}
+                    <div id="calorie-trend-chart" style="height: 400px;"></div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No data available for trends analysis.</p>
+                        <a href="{{ url_for('food.log') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>Start Logging Food
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>
+                    Meal Distribution
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if meal_patterns %}
+                    <div id="meal-distribution-chart" style="height: 300px;"></div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-chart-pie fa-2x text-muted mb-2"></i>
+                        <p class="text-muted">No meal data available</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-trophy me-2"></i>
+                    Achievements
+                </h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    {% if total_days >= 7 %}
+                        <li class="mb-2">
+                            <i class="fas fa-medal text-warning me-2"></i>
+                            <strong>Consistent Tracker:</strong> {{ total_days }} days of logging
+                        </li>
+                    {% endif %}
+                    
+                    {% if avg_daily_calories > 0 and (avg_daily_calories / calorie_goal) >= 0.8 and (avg_daily_calories / calorie_goal) <= 1.2 %}
+                        <li class="mb-2">
+                            <i class="fas fa-bullseye text-success me-2"></i>
+                            <strong>Goal Achiever:</strong> Staying close to your calorie target
+                        </li>
+                    {% endif %}
+                    
+                    {% if meal_patterns.get('breakfast', 0) > 5 %}
+                        <li class="mb-2">
+                            <i class="fas fa-sunrise text-info me-2"></i>
+                            <strong>Early Bird:</strong> Regular breakfast logging
+                        </li>
+                    {% endif %}
+                    
+                    {% if meal_patterns|length >= 3 %}
+                        <li class="mb-2">
+                            <i class="fas fa-balance-scale text-primary me-2"></i>
+                            <strong>Balanced Eater:</strong> Variety in meal types
+                        </li>
+                    {% endif %}
+                    
+                    {% if not (total_days >= 7 or (avg_daily_calories > 0 and (avg_daily_calories / calorie_goal) >= 0.8) or meal_patterns.get('breakfast', 0) > 5 or meal_patterns|length >= 3) %}
+                        <li class="text-muted">
+                            <i class="fas fa-hourglass-start me-2"></i>
+                            Keep logging to unlock achievements!
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    Insights & Recommendations
+                </h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    {% if avg_daily_calories > 0 %}
+                        {% if avg_daily_calories < calorie_goal * 0.8 %}
+                            <li class="mb-2">
+                                <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                                You're averaging {{ "%.0f"|format(calorie_goal - avg_daily_calories) }} calories below your goal. Consider adding healthy snacks.
+                            </li>
+                        {% elif avg_daily_calories > calorie_goal * 1.2 %}
+                            <li class="mb-2">
+                                <i class="fas fa-info-circle text-info me-2"></i>
+                                You're averaging {{ "%.0f"|format(avg_daily_calories - calorie_goal) }} calories above your goal. Consider portion control.
+                            </li>
+                        {% else %}
+                            <li class="mb-2">
+                                <i class="fas fa-check-circle text-success me-2"></i>
+                                Great job! You're maintaining a healthy calorie range.
+                            </li>
+                        {% endif %}
+                    {% endif %}
+                    
+                    {% if meal_patterns.get('breakfast', 0) < total_days * 0.5 %}
+                        <li class="mb-2">
+                            <i class="fas fa-coffee text-primary me-2"></i>
+                            Consider logging breakfast more regularly for better nutrition tracking.
+                        </li>
+                    {% endif %}
+                    
+                    {% if meal_patterns.get('snack', 0) > total_days * 1.5 %}
+                        <li class="mb-2">
+                            <i class="fas fa-apple-alt text-success me-2"></i>
+                            You're doing great with healthy snacking! Keep it up.
+                        </li>
+                    {% endif %}
+                    
+                    <li class="mb-0">
+                        <i class="fas fa-robot text-primary me-2"></i>
+                        <a href="{{ url_for('dashboard.ai_recommendations') }}">Get personalized AI recommendations</a> based on your eating patterns.
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    {% if chart_data.dates %}
+    // Calorie Trend Chart
+    const calorieTrace = {
+        x: {{ chart_data.dates|tojson }},
+        y: {{ chart_data.calories|tojson }},
+        type: 'scatter',
+        mode: 'lines+markers',
+        name: 'Daily Calories',
+        line: {color: '#0d6efd', width: 3},
+        marker: {size: 6}
+    };
+    
+    const goalTrace = {
+        x: {{ chart_data.dates|tojson }},
+        y: {{ chart_data.goal|tojson }},
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Calorie Goal',
+        line: {color: '#dc3545', dash: 'dash', width: 2}
+    };
+    
+    const calorieLayout = {
+        title: '',
+        xaxis: {title: 'Date'},
+        yaxis: {title: 'Calories'},
+        showlegend: true,
+        margin: {t: 20, r: 40, b: 40, l: 60},
+        hovermode: 'closest'
+    };
+    
+    Plotly.newPlot('calorie-trend-chart', [calorieTrace, goalTrace], calorieLayout, {responsive: true});
+    {% endif %}
+    
+    {% if meal_patterns %}
+    // Meal Distribution Chart
+    const mealData = [{
+        values: {{ meal_patterns.values()|list|tojson }},
+        labels: {{ meal_patterns.keys()|list|tojson }},
+        type: 'pie',
+        marker: {
+            colors: ['#ffc107', '#198754', '#0dcaf0', '#fd7e14']
+        }
+    }];
+    
+    const mealLayout = {
+        title: '',
+        margin: {t: 20, r: 20, b: 20, l: 20},
+        showlegend: true
+    };
+    
+    Plotly.newPlot('meal-distribution-chart', mealData, mealLayout, {responsive: true});
+    {% endif %}
+});
+</script>
+{% endblock %}

@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+
+{% block title %}Meal Planner - Food Planner{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>
+                <i class="fas fa-calendar text-primary me-2"></i>
+                Meal Planner
+            </h2>
+            <div>
+                <input type="date" id="date-picker" class="form-control" 
+                       value="{{ plan_date.strftime('%Y-%m-%d') }}"
+                       onchange="window.location.href='{{ url_for('dashboard.meal_planner') }}?date=' + this.value">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    {{ plan_date.strftime('%A, %B %d, %Y') }}
+                </h5>
+            </div>
+            <div class="card-body">
+                {% for meal_type in meal_types %}
+                    <div class="meal-section mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0">
+                                <span class="meal-badge {{ meal_type }}">{{ meal_type|title }}</span>
+                            </h6>
+                            <button class="btn btn-sm btn-outline-primary" onclick="addMealItem('{{ meal_type }}')">
+                                <i class="fas fa-plus"></i> Add Food
+                            </button>
+                        </div>
+                        
+                        <div class="meal-items">
+                            {% if logged_by_meal.get(meal_type) %}
+                                {% for log in logged_by_meal[meal_type] %}
+                                    <div class="food-item">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-1">{{ log.food.name }}</h6>
+                                                <small class="text-muted">
+                                                    {{ log.quantity }}g • {{ "%.0f"|format(log.get_calories()) }} cal
+                                                    {% if log.food.brand %} • {{ log.food.brand }}{% endif %}
+                                                </small>
+                                            </div>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{{ url_for('food.edit_log', log_id=log.id) }}" 
+                                                   class="btn btn-outline-secondary">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <a href="{{ url_for('food.delete_log', log_id=log.id) }}" 
+                                                   class="btn btn-outline-danger"
+                                                   onclick="return confirm('Delete this food log?')">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                        {% if log.notes %}
+                                            <small class="text-muted d-block mt-1">
+                                                <i class="fas fa-sticky-note me-1"></i>{{ log.notes }}
+                                            </small>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                                
+                                {% set meal_calories = logged_by_meal[meal_type]|sum(attribute='get_calories') %}
+                                <div class="meal-summary mt-2">
+                                    <small class="text-muted">
+                                        <strong>{{ meal_type|title }} Total: {{ "%.0f"|format(meal_calories) }} calories</strong>
+                                    </small>
+                                </div>
+                            {% else %}
+                                <div class="text-muted text-center py-3">
+                                    <i class="fas fa-utensils fa-2x mb-2"></i>
+                                    <p class="mb-0">No {{ meal_type }} logged yet</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if not loop.last %}<hr>{% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>
+                    Daily Summary
+                </h5>
+            </div>
+            <div class="card-body">
+                {% set total_calories = logged_by_meal.values()|sum(attribute='get_calories', default=0) %}
+                {% set calorie_goal = current_user.daily_calorie_goal %}
+                {% set calorie_progress = (total_calories / calorie_goal * 100) if calorie_goal > 0 else 0 %}
+                
+                <div class="text-center mb-3">
+                    <h3 class="mb-0">{{ "%.0f"|format(total_calories) }}</h3>
+                    <small class="text-muted">of {{ calorie_goal }} calories</small>
+                    
+                    <div class="progress mt-2">
+                        <div class="progress-bar {{ 'bg-success' if calorie_progress <= 100 else 'bg-warning' if calorie_progress <= 120 else 'bg-danger' }}" 
+                             style="width: {{ [calorie_progress, 100]|min }}%"></div>
+                    </div>
+                    
+                    {% if calorie_progress > 100 %}
+                        <small class="text-warning">
+                            {{ "%.0f"|format(total_calories - calorie_goal) }} calories over goal
+                        </small>
+                    {% else %}
+                        <small class="text-success">
+                            {{ "%.0f"|format(calorie_goal - total_calories) }} calories remaining
+                        </small>
+                    {% endif %}
+                </div>
+                
+                <hr>
+                
+                <div class="mb-3">
+                    <h6>Meal Breakdown</h6>
+                    {% for meal_type in meal_types %}
+                        {% if logged_by_meal.get(meal_type) %}
+                            {% set meal_calories = logged_by_meal[meal_type]|sum(attribute='get_calories') %}
+                            {% set meal_percentage = (meal_calories / total_calories * 100) if total_calories > 0 else 0 %}
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="meal-badge {{ meal_type }} small">{{ meal_type|title }}</span>
+                                <span>{{ "%.0f"|format(meal_calories) }} cal ({{ "%.0f"|format(meal_percentage) }}%)</span>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('food.log') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>Log Food
+                    </a>
+                    <button class="btn btn-outline-success" onclick="getAIRecommendation()">
+                        <i class="fas fa-robot me-1"></i>Get AI Suggestion
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        {% if existing_plan %}
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clipboard-list me-2"></i>
+                        Planned Meals
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% set planned_meals = existing_plan.get_meals_planned() %}
+                    {% if planned_meals %}
+                        {% for meal_type, meals in planned_meals.items() %}
+                            <div class="mb-2">
+                                <span class="meal-badge {{ meal_type }} small">{{ meal_type|title }}</span>
+                                <ul class="list-unstyled ms-3 mt-1">
+                                    {% for meal in meals %}
+                                        <li class="small">• {{ meal }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted text-center">No meals planned</p>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<div id="ai-recommendations" class="mt-3"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function addMealItem(mealType) {
+    // Redirect to food log page with meal type pre-selected
+    const url = new URL('{{ url_for("food.log") }}', window.location.origin);
+    url.searchParams.set('meal_type', mealType);
+    window.location.href = url.toString();
+}
+
+async function getAIRecommendation() {
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Getting suggestion...';
+    
+    try {
+        const response = await fetch('/api/ai/recommend', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ type: 'meal' })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            const recommendationHtml = `
+                <div class="alert alert-info alert-dismissible fade show">
+                    <h6><i class="fas fa-robot me-2"></i>AI Meal Suggestion</h6>
+                    <p class="mb-0">${data.recommendation.text}</p>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            document.getElementById('ai-recommendations').innerHTML = recommendationHtml;
+        } else {
+            alert('Error getting AI recommendation: ' + data.message);
+        }
+    } catch (error) {
+        alert('Error getting AI recommendation. Please try again.');
+        console.error('Error:', error);
+    } finally {
+        button.disabled = false;
+        button.innerHTML = originalText;
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Food Log History - Food Planner{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">
+            <i class="fas fa-history text-primary me-2"></i>
+            Food Log History
+        </h2>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        {% if food_logs.items %}
+            {% for log in food_logs.items %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <h6 class="mb-1">{{ log.food.name }}</h6>
+                                <small class="text-muted">
+                                    {{ log.food.brand or 'Unknown brand' }} • 
+                                    {{ log.quantity }}g • 
+                                    <span class="calories-badge">{{ "%.0f"|format(log.get_calories()) }} cal</span>
+                                </small>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <span class="meal-badge {{ log.meal_type }}">{{ log.meal_type|title }}</span>
+                                <br>
+                                <small class="text-muted">{{ log.logged_at.strftime('%B %d, %Y at %I:%M %p') }}</small>
+                            </div>
+                            
+                            <div class="col-md-3 text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('food.edit_log', log_id=log.id) }}" 
+                                       class="btn btn-outline-primary">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </a>
+                                    <a href="{{ url_for('food.delete_log', log_id=log.id) }}" 
+                                       class="btn btn-outline-danger"
+                                       onclick="return confirm('Are you sure you want to delete this food log?')">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if log.notes %}
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-sticky-note me-1"></i>{{ log.notes }}
+                                </small>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+            
+            <!-- Pagination -->
+            {% if food_logs.pages > 1 %}
+                <nav aria-label="Food log pagination">
+                    <ul class="pagination justify-content-center">
+                        {% if food_logs.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('food.history', page=food_logs.prev_num) }}">
+                                    <i class="fas fa-chevron-left"></i> Previous
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for page_num in food_logs.iter_pages() %}
+                            {% if page_num %}
+                                {% if page_num != food_logs.page %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('food.history', page=page_num) }}">{{ page_num }}</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                {% endif %}
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if food_logs.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('food.history', page=food_logs.next_num) }}">
+                                    Next <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                
+                <div class="text-center text-muted">
+                    <small>
+                        Showing {{ food_logs.per_page * (food_logs.page - 1) + 1 }} to 
+                        {{ food_logs.per_page * food_logs.page if food_logs.page < food_logs.pages else food_logs.total }} 
+                        of {{ food_logs.total }} entries
+                    </small>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-history fa-5x text-muted mb-4"></i>
+                    <h4>No Food Logs Yet</h4>
+                    <p class="text-muted mb-4">
+                        You haven't logged any food items yet. Start tracking your nutrition 
+                        by logging your first meal!
+                    </p>
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                        <a href="{{ url_for('food.log') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>Log Your First Meal
+                        </a>
+                        <a href="{{ url_for('dashboard.main') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-home me-1"></i>Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
