@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_migrate import Migrate
+from flask_wtf.csrf import CSRFProtect
 from config import Config
 from models import db, User, Food, FoodLog, DailyPlan, AIRecommendation
 from routes.auth import auth_bp
@@ -16,12 +17,23 @@ def create_app():
     # Initialize extensions
     db.init_app(app)
     migrate = Migrate(app, db)
+    csrf = CSRFProtect(app)
     
     # Initialize Flask-Login
     login_manager = LoginManager()
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Please log in to access this page.'
+    
+    # Security headers
+    @app.after_request
+    def security_headers(response):
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['X-Frame-Options'] = 'DENY'
+        response.headers['X-XSS-Protection'] = '1; mode=block'
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+        response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        return response
     
     @login_manager.user_loader
     def load_user(user_id):
