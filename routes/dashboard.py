@@ -1,14 +1,15 @@
 from flask import Blueprint, render_template, request
-from flask_login import login_required, current_user
 from models import db, FoodLog, DailyPlan, AIRecommendation
+from services.auth0_service import requires_auth, get_current_user
 from datetime import datetime, date, timedelta
 from sqlalchemy import func, and_, or_
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
 @dashboard_bp.route('/')
-@login_required
+@requires_auth
 def main():
+    current_user = get_current_user()
     today = date.today()
     
     # Get today's food logs
@@ -55,8 +56,9 @@ def main():
                          today=today)
 
 @dashboard_bp.route('/nutrition')
-@login_required
+@requires_auth
 def nutrition():
+    current_user = get_current_user()
     # Get date range from query params
     days = request.args.get('days', 7, type=int)
     end_date = date.today()
@@ -103,8 +105,9 @@ def nutrition():
                          days=days)
 
 @dashboard_bp.route('/meal-planner')
-@login_required
+@requires_auth
 def meal_planner():
+    current_user = get_current_user()
     # Get the requested date or default to today
     requested_date = request.args.get('date')
     if requested_date:
@@ -143,8 +146,9 @@ def meal_planner():
                          meal_types=['breakfast', 'lunch', 'dinner', 'snack'])
 
 @dashboard_bp.route('/ai-recommendations')
-@login_required
+@requires_auth
 def ai_recommendations():
+    current_user = get_current_user()
     # Get recommendations for the user, excluding thumbs down (-1 rating)
     # Include NULL ratings (no rating yet) and thumbs up (1 rating)
     recommendations = AIRecommendation.query.filter(
@@ -156,8 +160,9 @@ def ai_recommendations():
                          recommendations=recommendations)
 
 @dashboard_bp.route('/analytics')
-@login_required
+@requires_auth
 def analytics():
+    current_user = get_current_user()
     # Get data for the last 30 days
     end_date = date.today()
     start_date = end_date - timedelta(days=30)

@@ -22,7 +22,7 @@
             
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
-                    {% if current_user.is_authenticated %}
+                    {% if current_user %}
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('dashboard.main') }}">
                                 <i class="fas fa-home"></i> Dashboard
@@ -52,10 +52,15 @@
                 </ul>
                 
                 <ul class="navbar-nav">
-                    {% if current_user.is_authenticated %}
+                    {% if current_user %}
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-user"></i> {{ current_user.username }}
+                                {% if current_user.picture_url %}
+                                    <img src="{{ current_user.picture_url }}" alt="Profile" class="rounded-circle me-1" width="24" height="24">
+                                {% else %}
+                                    <i class="fas fa-user"></i>
+                                {% endif %}
+                                {{ current_user.name }}
                             </a>
                             <ul class="dropdown-menu">
                                 <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}">Profile</a></li>
@@ -69,7 +74,7 @@
                             <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('auth.register') }}">Register</a>
+                            <a class="nav-link" href="{{ url_for('auth.register') }}">Get Started</a>
                         </li>
                     {% endif %}
                 </ul>

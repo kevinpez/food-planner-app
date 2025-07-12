@@ -1,16 +1,17 @@
 from flask import Blueprint, request, jsonify
-from flask_login import login_required, current_user
 from flask_wtf.csrf import validate_csrf, ValidationError
 from models import db, Food, FoodLog, AIRecommendation
 from services.nutrition_api import search_food_by_upc, search_food_by_name
 from services.ai_service import get_meal_recommendation
+from services.auth0_service import requires_auth, get_current_user
 from datetime import datetime
 
 api_bp = Blueprint('api', __name__)
 
 @api_bp.route('/food/search-upc/<upc>')
-@login_required
+@requires_auth
 def search_upc(upc):
+    current_user = get_current_user()
     try:
         # First check if we have this UPC in our database
         food = Food.query.filter_by(upc_code=upc).first()
@@ -55,8 +56,9 @@ def search_upc(upc):
         }), 500
 
 @api_bp.route('/food/search-name')
-@login_required
+@requires_auth
 def search_name():
+    current_user = get_current_user()
     query = request.args.get('q', '').strip()
     
     if not query:
@@ -98,8 +100,9 @@ def search_name():
         }), 500
 
 @api_bp.route('/food/log', methods=['POST'])
-@login_required
+@requires_auth
 def log_food():
+    current_user = get_current_user()
     # Validate CSRF token
     try:
         validate_csrf(request.headers.get('X-CSRFToken'))
@@ -160,8 +163,9 @@ def log_food():
         }), 500
 
 @api_bp.route('/ai/recommend', methods=['POST'])
-@login_required
+@requires_auth
 def ai_recommend():
+    current_user = get_current_user()
     # Validate CSRF token
     try:
         validate_csrf(request.headers.get('X-CSRFToken'))
@@ -226,8 +230,9 @@ def ai_recommend():
         }), 500
 
 @api_bp.route('/ai/recommendation/<int:recommendation_id>/rate', methods=['POST'])
-@login_required
+@requires_auth
 def rate_recommendation(recommendation_id):
+    current_user = get_current_user()
     try:
         data = request.get_json()
         rating = data.get('rating')  # 1 for thumbs up, -1 for thumbs down
@@ -266,8 +271,9 @@ def rate_recommendation(recommendation_id):
         }), 500
 
 @api_bp.route('/nutrition/summary')
-@login_required
+@requires_auth
 def nutrition_summary():
+    current_user = get_current_user()
     try:
         from datetime import date, timedelta
         from sqlalchemy import func, and_
@@ -333,8 +339,9 @@ def nutrition_summary():
         }), 500
 
 @api_bp.route('/user/preferences', methods=['GET', 'POST'])
-@login_required
+@requires_auth
 def user_preferences():
+    current_user = get_current_user()
     if request.method == 'POST':
         data = request.get_json()
         

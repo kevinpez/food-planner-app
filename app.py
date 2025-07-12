@@ -1,6 +1,5 @@
 import os
 from flask import Flask, render_template, redirect, url_for, flash
-from flask_login import LoginManager, login_required, current_user
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
 from config import Config
@@ -10,6 +9,7 @@ from routes.food import food_bp
 from routes.api import api_bp
 from routes.dashboard import dashboard_bp
 from routes.barcode import barcode_bp
+from services.auth0_service import init_auth0, get_current_user
 
 def create_app():
     app = Flask(__name__)
@@ -20,11 +20,8 @@ def create_app():
     migrate = Migrate(app, db)
     csrf = CSRFProtect(app)
     
-    # Initialize Flask-Login
-    login_manager = LoginManager()
-    login_manager.init_app(app)
-    login_manager.login_view = 'auth.login'
-    login_manager.login_message = 'Please log in to access this page.'
+    # Initialize Auth0
+    init_auth0(app)
     
     # Security headers
     @app.after_request
@@ -36,9 +33,10 @@ def create_app():
         response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
         return response
     
-    @login_manager.user_loader
-    def load_user(user_id):
-        return User.query.get(int(user_id))
+    # Make current_user available in templates
+    @app.context_processor
+    def inject_user():
+        return dict(current_user=get_current_user())
     
     # Register blueprints
     app.register_blueprint(auth_bp, url_prefix='/auth')
@@ -50,7 +48,8 @@ def create_app():
     # Main routes
     @app.route('/')
     def index():
-        if current_user.is_authenticated:
+        current_user = get_current_user()
+        if current_user:
             return redirect(url_for('dashboard.main'))
         return render_template('index.html')
     

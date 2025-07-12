@@ -26,6 +26,12 @@ class Config:
     # Food API Settings
     OPEN_FOOD_FACTS_BASE_URL = 'https://world.openfoodfacts.org/api/v0/product'
     
+    # Auth0 Settings
+    AUTH0_DOMAIN = os.environ.get('AUTH0_DOMAIN')
+    AUTH0_CLIENT_ID = os.environ.get('AUTH0_CLIENT_ID')
+    AUTH0_CLIENT_SECRET = os.environ.get('AUTH0_CLIENT_SECRET')
+    AUTH0_AUDIENCE = os.environ.get('AUTH0_AUDIENCE')
+    
     # App Settings
     ITEMS_PER_PAGE = 20
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file upload

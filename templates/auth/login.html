@@ -9,40 +9,33 @@
             <div class="card-body">
                 <h3 class="card-title text-center mb-4">
                     <i class="fas fa-sign-in-alt text-primary"></i>
-                    Login
+                    Welcome to Food Planner
                 </h3>
                 
-                <form method="POST">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <div class="mb-3">
-                        <label for="username" class="form-label">Username</label>
-                        <input type="text" class="form-control" id="username" name="username" required>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
-                    </div>
-                    
-                    <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="remember" name="remember">
-                        <label class="form-check-label" for="remember">
-                            Remember me
-                        </label>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="fas fa-sign-in-alt me-2"></i>Login
-                    </button>
-                </form>
+                <p class="text-center text-muted mb-4">
+                    Track your nutrition, scan barcodes, and get AI-powered meal recommendations.
+                </p>
                 
-                <hr>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-sign-in-alt me-2"></i>
+                        Sign In with Auth0
+                    </a>
+                </div>
+                
+                <hr class="my-4">
                 
                 <div class="text-center">
-                    <p class="mb-0">Don't have an account?</p>
+                    <p class="mb-0 text-muted">New to Food Planner?</p>
                     <a href="{{ url_for('auth.register') }}" class="btn btn-outline-primary">
-                        <i class="fas fa-user-plus me-2"></i>Register
+                        <i class="fas fa-user-plus me-2"></i>Get Started
                     </a>
+                </div>
+                
+                <div class="text-center mt-4">
+                    <small class="text-muted">
+                        Secure authentication powered by Auth0
+                    </small>
                 </div>
             </div>
         </div>

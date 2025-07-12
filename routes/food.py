@@ -1,13 +1,13 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from flask_login import login_required, current_user
 from models import db, Food, FoodLog
 from services.nutrition_api import search_food_by_upc, search_food_by_name
+from services.auth0_service import requires_auth, get_current_user
 from datetime import datetime
 
 food_bp = Blueprint('food', __name__)
 
 @food_bp.route('/log', methods=['GET', 'POST'])
-@login_required
+@requires_auth
 def log():
     if request.method == 'POST':
         food_id = request.form.get('food_id', type=int)
@@ -30,6 +30,7 @@ def log():
             return redirect(url_for('food.log'))
         
         # Create new food log entry
+        current_user = get_current_user()
         food_log = FoodLog(
             user_id=current_user.id,
             food_id=food_id,
@@ -51,7 +52,7 @@ def log():
     return render_template('food/log.html')
 
 @food_bp.route('/search')
-@login_required
+@requires_auth
 def search():
     query = request.args.get('q', '')
     upc = request.args.get('upc', '')
@@ -88,7 +89,7 @@ def search():
     return render_template('food/search.html', foods=foods, query=query, upc=upc)
 
 @food_bp.route('/add-custom', methods=['GET', 'POST'])
-@login_required
+@requires_auth
 def add_custom():
     if request.method == 'POST':
         name = request.form.get('name')
@@ -139,12 +140,13 @@ def add_custom():
     return render_template('food/add_custom.html')
 
 @food_bp.route('/history')
-@login_required
+@requires_auth
 def history():
     page = request.args.get('page', 1, type=int)
     per_page = 20
     
     # Get user's food logs with pagination
+    current_user = get_current_user()
     food_logs = FoodLog.query.filter_by(user_id=current_user.id)\
         .order_by(FoodLog.logged_at.desc())\
         .paginate(page=page, per_page=per_page, error_out=False)
@@ -152,11 +154,12 @@ def history():
     return render_template('food/history.html', food_logs=food_logs)
 
 @food_bp.route('/delete/<int:log_id>')
-@login_required
+@requires_auth
 def delete_log(log_id):
     food_log = FoodLog.query.get_or_404(log_id)
     
     # Check if the log belongs to the current user
+    current_user = get_current_user()
     if food_log.user_id != current_user.id:
         flash('You can only delete your own food logs.', 'error')
         return redirect(url_for('food.history'))
@@ -172,11 +175,12 @@ def delete_log(log_id):
     return redirect(url_for('food.history'))
 
 @food_bp.route('/edit/<int:log_id>', methods=['GET', 'POST'])
-@login_required
+@requires_auth
 def edit_log(log_id):
     food_log = FoodLog.query.get_or_404(log_id)
     
     # Check if the log belongs to the current user
+    current_user = get_current_user()
     if food_log.user_id != current_user.id:
         flash('You can only edit your own food logs.', 'error')
         return redirect(url_for('food.history'))

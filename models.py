@@ -1,16 +1,15 @@
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import UserMixin
 from datetime import datetime
-from werkzeug.security import generate_password_hash, check_password_hash
 import json
 
 db = SQLAlchemy()
 
-class User(UserMixin, db.Model):
+class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
+    auth0_user_id = db.Column(db.String(255), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(128))
+    name = db.Column(db.String(100), nullable=False)
+    picture_url = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # User preferences
@@ -23,11 +22,19 @@ class User(UserMixin, db.Model):
     daily_plans = db.relationship('DailyPlan', backref='user', lazy='dynamic')
     ai_recommendations = db.relationship('AIRecommendation', backref='user', lazy='dynamic')
     
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
+    @classmethod
+    def get_by_auth0_id(cls, auth0_user_id):
+        return cls.query.filter_by(auth0_user_id=auth0_user_id).first()
     
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
+    @classmethod
+    def create_from_auth0(cls, auth0_user_info):
+        user = cls(
+            auth0_user_id=auth0_user_info['sub'],
+            email=auth0_user_info['email'],
+            name=auth0_user_info.get('name', auth0_user_info['email']),
+            picture_url=auth0_user_info.get('picture')
+        )
+        return user
     
     def set_dietary_restrictions(self, restrictions_list):
         self.dietary_restrictions = json.dumps(restrictions_list)
@@ -38,7 +45,7 @@ class User(UserMixin, db.Model):
         return []
     
     def __repr__(self):
-        return f'<User {self.username}>'
+        return f'<User {self.name} ({self.email})>'
 
 class Food(db.Model):
     id = db.Column(db.Integer, primary_key=True)

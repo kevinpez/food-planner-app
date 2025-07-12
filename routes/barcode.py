@@ -1,9 +1,9 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
-from flask_login import login_required, current_user
 from flask_wtf.csrf import validate_csrf, ValidationError
 from models import db, Food, FoodLog
 from services.ai_service import extract_barcode_from_image
 from services.nutrition_api import get_food_by_barcode
+from services.auth0_service import requires_auth, get_current_user
 import os
 import uuid
 from datetime import datetime
@@ -22,8 +22,9 @@ def ensure_upload_folder():
         os.makedirs(UPLOAD_FOLDER)
 
 @barcode_bp.route('/scan', methods=['GET', 'POST'])
-@login_required
+@requires_auth
 def scan():
+    current_user = get_current_user()
     if request.method == 'POST':
         # Validate CSRF token
         try:
@@ -108,8 +109,9 @@ def scan():
     return render_template('food/barcode_scan.html')
 
 @barcode_bp.route('/log-scanned', methods=['POST'])
-@login_required
+@requires_auth
 def log_scanned():
+    current_user = get_current_user()
     food_id = request.form.get('food_id', type=int)
     quantity = request.form.get('quantity', type=float)
     meal_type = request.form.get('meal_type')
