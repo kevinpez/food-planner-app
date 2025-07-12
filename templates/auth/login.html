@@ -23,6 +23,17 @@
                     </a>
                 </div>
                 
+                <div class="alert alert-warning mt-4" style="display: none;" id="auth0-config-warning">
+                    <h6><i class="fas fa-exclamation-triangle me-2"></i>Auth0 Setup Required</h6>
+                    <p class="mb-2">To use authentication, please configure your Auth0 environment variables:</p>
+                    <ul class="mb-0">
+                        <li><code>AUTH0_DOMAIN</code></li>
+                        <li><code>AUTH0_CLIENT_ID</code></li>
+                        <li><code>AUTH0_CLIENT_SECRET</code></li>
+                        <li><code>AUTH0_AUDIENCE</code></li>
+                    </ul>
+                </div>
+                
                 <hr class="my-4">
                 
                 <div class="text-center">
@@ -41,4 +52,16 @@
         </div>
     </div>
 </div>
+
+<script>
+// Show Auth0 config warning if there are error messages about configuration
+document.addEventListener('DOMContentLoaded', function() {
+    const alerts = document.querySelectorAll('.alert-danger');
+    alerts.forEach(function(alert) {
+        if (alert.textContent.includes('Auth0') || alert.textContent.includes('environment')) {
+            document.getElementById('auth0-config-warning').style.display = 'block';
+        }
+    });
+});
+</script>
 {% endblock %}

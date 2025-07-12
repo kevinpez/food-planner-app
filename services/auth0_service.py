@@ -13,19 +13,32 @@ from models import db, User
 
 def init_auth0(app):
     """Initialize Auth0 OAuth client"""
-    oauth = OAuth(app)
-    
-    auth0 = oauth.register(
-        'auth0',
-        client_id=app.config['AUTH0_CLIENT_ID'],
-        client_secret=app.config['AUTH0_CLIENT_SECRET'],
-        server_metadata_url=f'https://{app.config["AUTH0_DOMAIN"]}/.well-known/openid_configuration',
-        client_kwargs={
-            'scope': 'openid profile email',
-        },
-    )
-    
-    return auth0
+    try:
+        # Check if Auth0 configuration is available
+        if not all([
+            app.config.get('AUTH0_DOMAIN'),
+            app.config.get('AUTH0_CLIENT_ID'),
+            app.config.get('AUTH0_CLIENT_SECRET')
+        ]):
+            app.logger.warning("Auth0 configuration missing. Auth0 features will be disabled.")
+            return None
+        
+        oauth = OAuth(app)
+        
+        auth0 = oauth.register(
+            'auth0',
+            client_id=app.config['AUTH0_CLIENT_ID'],
+            client_secret=app.config['AUTH0_CLIENT_SECRET'],
+            server_metadata_url=f'https://{app.config["AUTH0_DOMAIN"]}/.well-known/openid_configuration',
+            client_kwargs={
+                'scope': 'openid profile email',
+            },
+        )
+        
+        return auth0
+    except Exception as e:
+        app.logger.error(f"Failed to initialize Auth0: {str(e)}")
+        return None
 
 
 def get_auth0_client():
@@ -37,15 +50,19 @@ def get_auth0_client():
 
 def get_user_from_session():
     """Get user from session and database"""
-    if 'user' not in session:
+    try:
+        if 'user' not in session:
+            return None
+        
+        auth0_user_id = session['user'].get('sub')
+        if not auth0_user_id:
+            return None
+        
+        user = User.get_by_auth0_id(auth0_user_id)
+        return user
+    except Exception:
+        # If there's any issue accessing session or database, return None
         return None
-    
-    auth0_user_id = session['user'].get('sub')
-    if not auth0_user_id:
-        return None
-    
-    user = User.get_by_auth0_id(auth0_user_id)
-    return user
 
 
 def create_or_update_user(auth0_user_info):
@@ -84,7 +101,13 @@ def requires_auth(f):
 
 def get_current_user():
     """Get current authenticated user"""
-    return getattr(g, 'current_user', None)
+    # First check if user is set in g (from @requires_auth decorator)
+    user = getattr(g, 'current_user', None)
+    if user:
+        return user
+    
+    # If not in g, try to get from session (for non-protected routes)
+    return get_user_from_session()
 
 
 def get_auth0_login_url():

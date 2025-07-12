@@ -15,6 +15,12 @@ def login():
     if current_user:
         return redirect(url_for('dashboard.main'))
     
+    # Check if Auth0 is configured
+    from services.auth0_service import get_auth0_client
+    if not get_auth0_client():
+        flash('Auth0 is not configured. Please check your environment variables.', 'error')
+        return render_template('auth/login.html')
+    
     # Redirect to Auth0 login
     return get_auth0_login_url()
 
