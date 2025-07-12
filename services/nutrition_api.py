@@ -191,3 +191,45 @@ def update_food_from_api(food_id):
     
     except Exception as e:
         return False, f"Error updating food: {str(e)}"
+
+def get_food_by_barcode(barcode):
+    """Get food data by barcode for scanning feature - returns dict format"""
+    url = f"{Config.OPEN_FOOD_FACTS_BASE_URL}/{barcode}.json"
+    
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        
+        data = response.json()
+        
+        if data.get('status') == 1:  # Product found
+            product = data.get('product', {})
+            
+            # Extract nutrition data
+            nutriments = product.get('nutriments', {})
+            nutrition_data = {
+                'calories_per_100g': nutriments.get('energy-kcal_100g', 0),
+                'protein_per_100g': nutriments.get('proteins_100g', 0),
+                'carbs_per_100g': nutriments.get('carbohydrates_100g', 0),
+                'fat_per_100g': nutriments.get('fat_100g', 0),
+                'fiber_per_100g': nutriments.get('fiber_100g', 0),
+                'sugar_per_100g': nutriments.get('sugars_100g', 0),
+                'sodium_per_100g': nutriments.get('sodium_100g', 0)
+            }
+            
+            # Return data in format expected by barcode scanner
+            return {
+                'name': product.get('product_name', f'Product {barcode}'),
+                'brand': product.get('brands', ''),
+                'ingredients': product.get('ingredients_text', ''),
+                'nutrition': nutrition_data
+            }
+        
+        return None
+    
+    except requests.RequestException as e:
+        print(f"Error fetching barcode {barcode}: {str(e)}")
+        return None
+    except Exception as e:
+        print(f"Error processing barcode {barcode}: {str(e)}")
+        return None

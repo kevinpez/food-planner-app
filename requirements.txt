@@ -7,6 +7,7 @@ WTForms==3.1.1
 Werkzeug==3.0.1
 requests==2.31.0
 anthropic==0.34.0
+openai==1.95.1
 python-dotenv==1.0.0
 APScheduler==3.10.4
 plotly==5.18.0

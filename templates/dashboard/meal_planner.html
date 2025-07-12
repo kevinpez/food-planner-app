@@ -71,7 +71,7 @@
                                     </div>
                                 {% endfor %}
                                 
-                                {% set meal_calories = logged_by_meal[meal_type]|sum(attribute='get_calories') %}
+                                {% set meal_calories = logged_by_meal[meal_type]|map(attribute='get_calories')|map('round')|sum %}
                                 <div class="meal-summary mt-2">
                                     <small class="text-muted">
                                         <strong>{{ meal_type|title }} Total: {{ "%.0f"|format(meal_calories) }} calories</strong>
@@ -101,7 +101,12 @@
                 </h5>
             </div>
             <div class="card-body">
-                {% set total_calories = logged_by_meal.values()|sum(attribute='get_calories', default=0) %}
+                {% set total_calories = 0 %}
+                {% for meal_logs in logged_by_meal.values() %}
+                    {% for log in meal_logs %}
+                        {% set total_calories = total_calories + log.get_calories() %}
+                    {% endfor %}
+                {% endfor %}
                 {% set calorie_goal = current_user.daily_calorie_goal %}
                 {% set calorie_progress = (total_calories / calorie_goal * 100) if calorie_goal > 0 else 0 %}
                 
@@ -131,7 +136,7 @@
                     <h6>Meal Breakdown</h6>
                     {% for meal_type in meal_types %}
                         {% if logged_by_meal.get(meal_type) %}
-                            {% set meal_calories = logged_by_meal[meal_type]|sum(attribute='get_calories') %}
+                            {% set meal_calories = logged_by_meal[meal_type]|map(attribute='get_calories')|map('round')|sum %}
                             {% set meal_percentage = (meal_calories / total_calories * 100) if total_calories > 0 else 0 %}
                             <div class="d-flex justify-content-between mb-1">
                                 <span class="meal-badge {{ meal_type }} small">{{ meal_type|title }}</span>

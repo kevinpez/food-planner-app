@@ -8,6 +8,7 @@ from routes.auth import auth_bp
 from routes.food import food_bp
 from routes.api import api_bp
 from routes.dashboard import dashboard_bp
+from routes.barcode import barcode_bp
 import os
 
 def create_app():
@@ -44,6 +45,7 @@ def create_app():
     app.register_blueprint(food_bp, url_prefix='/food')
     app.register_blueprint(api_bp, url_prefix='/api')
     app.register_blueprint(dashboard_bp, url_prefix='/dashboard')
+    app.register_blueprint(barcode_bp, url_prefix='/barcode')
     
     # Main routes
     @app.route('/')

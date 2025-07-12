@@ -20,27 +20,44 @@
             </div>
             <div class="card-body">
                 <!-- Search Methods -->
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-body text-center">
+                <div class="row mb-3 equal-height-cards">
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center d-flex flex-column">
+                                <i class="fas fa-camera fa-3x text-warning mb-3"></i>
+                                <h6>Photo Scan</h6>
+                                <p class="small text-muted mb-3 flex-grow-1">AI-powered barcode detection</p>
+                                <a href="{{ url_for('barcode.scan') }}" class="btn btn-warning mt-auto">
+                                    <i class="fas fa-camera me-1"></i>Scan Photo
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center d-flex flex-column">
                                 <i class="fas fa-barcode fa-3x text-primary mb-3"></i>
-                                <h6>Scan Barcode</h6>
-                                <input type="text" id="upc-input" class="form-control mb-2" placeholder="Enter UPC code">
-                                <button class="btn btn-primary" id="scan-barcode">
+                                <h6>UPC Lookup</h6>
+                                <div class="flex-grow-1 d-flex flex-column justify-content-center">
+                                    <input type="text" id="upc-input" class="form-control mb-2" placeholder="Enter UPC code">
+                                </div>
+                                <button class="btn btn-primary mt-auto" id="scan-barcode">
                                     <i class="fas fa-search me-1"></i>Search UPC
                                 </button>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-body text-center">
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center d-flex flex-column">
                                 <i class="fas fa-search fa-3x text-success mb-3"></i>
                                 <h6>Search by Name</h6>
-                                <input type="text" id="name-input" class="form-control mb-2" placeholder="Enter food name">
-                                <button class="btn btn-success" id="search-name">
+                                <div class="flex-grow-1 d-flex flex-column justify-content-center">
+                                    <input type="text" id="name-input" class="form-control mb-2" placeholder="Enter food name">
+                                </div>
+                                <button class="btn btn-success mt-auto" id="search-name">
                                     <i class="fas fa-search me-1"></i>Search Name
                                 </button>
                             </div>

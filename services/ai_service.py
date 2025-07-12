@@ -1,9 +1,13 @@
 import os
 from config import Config
 import json
+import base64
 
 # Initialize Anthropic client
 client = None
+
+# Initialize OpenAI client for GPT-4o Vision
+openai_client = None
 
 def get_client():
     global client
@@ -15,6 +19,84 @@ def get_client():
             print(f"Error initializing Anthropic client: {str(e)}")
             client = False
     return client
+
+def get_openai_client():
+    global openai_client
+    if openai_client is None and hasattr(Config, 'OPENAI_API_KEY') and Config.OPENAI_API_KEY:
+        try:
+            from openai import OpenAI
+            # Initialize with minimal parameters to avoid conflicts
+            openai_client = OpenAI(
+                api_key=Config.OPENAI_API_KEY,
+                timeout=30.0
+            )
+        except Exception as e:
+            print(f"Error initializing OpenAI client: {str(e)}")
+            openai_client = False
+    return openai_client
+
+def extract_barcode_from_image(image_path):
+    """Extract barcode from image using GPT-4o Vision"""
+    
+    client = get_openai_client()
+    if not client:
+        raise Exception("OpenAI API key not configured for barcode scanning")
+    
+    try:
+        # Read and encode the image
+        with open(image_path, "rb") as image_file:
+            base64_image = base64.b64encode(image_file.read()).decode('utf-8')
+        
+        # Create the prompt for barcode detection
+        prompt = """
+        Look at this image and extract any barcode numbers you can see. 
+        Focus on finding UPC barcodes (typically 12 digits) or EAN barcodes (typically 13 digits).
+        
+        Rules:
+        1. Only return the numeric barcode if you can clearly see one
+        2. Return just the numbers, no other text
+        3. If you cannot clearly read a barcode, return "NONE"
+        4. Look for barcodes on product packaging
+        
+        Return only the barcode number or "NONE".
+        """
+        
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{base64_image}",
+                                "detail": "high"
+                            }
+                        }
+                    ]
+                }
+            ],
+            max_tokens=50,
+            temperature=0.1
+        )
+        
+        result = response.choices[0].message.content.strip()
+        
+        # Validate the result
+        if result == "NONE" or not result.isdigit():
+            return None
+        
+        # Check if it's a valid UPC/EAN length
+        if len(result) not in [12, 13, 14]:
+            return None
+        
+        return result
+        
+    except Exception as e:
+        print(f"Error extracting barcode: {str(e)}")
+        raise Exception(f"Failed to extract barcode from image: {str(e)}")
 
 def get_meal_recommendation(recent_logs, dietary_restrictions, calorie_goal, preferred_cuisine, recommendation_type='meal'):
     """Get AI-powered meal recommendation using Anthropic Claude"""

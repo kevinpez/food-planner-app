@@ -1,0 +1,364 @@
+{% extends "base.html" %}
+
+{% block title %}Scan Barcode{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Scan Barcode</h2>
+    <p class="text-muted">Upload a photo of a product barcode to automatically log your food</p>
+    
+    <!-- Upload Form -->
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <form id="uploadForm" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" id="csrf_token">
+                        <div class="mb-3">
+                            <label for="photo" class="form-label">Choose Photo</label>
+                            <div class="custom-file-upload">
+                                <input type="file" id="photo" name="photo" 
+                                       accept="image/*" capture="environment" required>
+                                <div class="file-upload-button" id="fileUploadButton">
+                                    <div class="file-upload-content">
+                                        <i class="fas fa-camera file-upload-icon"></i>
+                                        <div class="file-upload-text">Tap to take photo or select image</div>
+                                        <div class="file-upload-hint">Supported: JPG, PNG, GIF, BMP, WebP</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="imagePreview" style="display: none;">
+                                <img id="previewImage" class="image-preview" alt="Selected image">
+                                <div class="text-center mt-2">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearImageSelection()">
+                                        <i class="fas fa-times"></i> Remove Image
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary" id="scanBtn">
+                            <i class="fas fa-camera"></i> Scan Barcode
+                        </button>
+                        
+                        <a href="{{ url_for('food.log') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Manual Entry
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading State -->
+    <div id="loadingDiv" class="mt-4" style="display: none;">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                <div class="card-body text-center">
+                    <div class="mb-4">
+                        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                    <h5 class="mb-3">
+                        <i class="fas fa-robot text-primary me-2"></i>
+                        AI Processing Image
+                    </h5>
+                    <p class="mb-2">Analyzing your photo and scanning for barcodes...</p>
+                    <div class="progress mb-3">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 75%">
+                        </div>
+                    </div>
+                    <p class="text-muted small">This may take a few seconds</p>
+                </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Results -->
+    <div id="resultsDiv" class="mt-4" style="display: none;">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Scanned Product</h5>
+                </div>
+                <div class="card-body">
+                    <div id="productInfo" style="display: none;">
+                        <!-- Product info will be populated here -->
+                    </div>
+                    
+                    <!-- Logging Form -->
+                    <form action="{{ url_for('barcode.log_scanned') }}" method="POST" id="logForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" id="foodId" name="food_id">
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="quantity" class="form-label">Quantity (grams)</label>
+                                    <input type="number" class="form-control" id="quantity" name="quantity" 
+                                           step="0.1" min="0.1" value="100" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="meal_type" class="form-label">Meal Type</label>
+                                    <select class="form-select" id="meal_type" name="meal_type" required>
+                                        <option value="">Select meal type...</option>
+                                        <option value="breakfast">Breakfast</option>
+                                        <option value="lunch">Lunch</option>
+                                        <option value="dinner">Dinner</option>
+                                        <option value="snack">Snack</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notes (optional)</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="2"></textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-plus"></i> Log Food
+                        </button>
+                        
+                        <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                            <i class="fas fa-camera"></i> Scan Another
+                        </button>
+                    </form>
+                </div>
+            </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Error Display -->
+    <div id="errorDiv" class="row justify-content-center mt-4" style="display: none;">
+        <div class="col-md-8">
+            <div class="card border-danger">
+                <div class="card-body">
+                    <div class="text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-exclamation-circle text-danger" style="font-size: 3rem;"></i>
+                        </div>
+                        <h5 class="text-danger mb-3">Oops! Something went wrong</h5>
+                        <p id="errorMessage" class="mb-4"></p>
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button type="button" class="btn btn-danger" onclick="resetForm()">
+                                <i class="fas fa-redo me-1"></i>Try Again
+                            </button>
+                            <a href="{{ url_for('food.log') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>Back to Manual Entry
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadForm = document.getElementById('uploadForm');
+    const loadingDiv = document.getElementById('loadingDiv');
+    const resultsDiv = document.getElementById('resultsDiv');
+    const errorDiv = document.getElementById('errorDiv');
+    const scanBtn = document.getElementById('scanBtn');
+    const fileInput = document.getElementById('photo');
+    const fileUploadButton = document.getElementById('fileUploadButton');
+    const imagePreview = document.getElementById('imagePreview');
+    const previewImage = document.getElementById('previewImage');
+    
+    // Set default meal type based on time
+    const now = new Date();
+    const hour = now.getHours();
+    const mealTypeSelect = document.getElementById('meal_type');
+    
+    if (hour >= 5 && hour < 11) {
+        mealTypeSelect.value = 'breakfast';
+    } else if (hour >= 11 && hour < 17) {
+        mealTypeSelect.value = 'lunch';
+    } else if (hour >= 17 && hour < 22) {
+        mealTypeSelect.value = 'dinner';
+    } else {
+        mealTypeSelect.value = 'snack';
+    }
+    
+    // File input change handler for preview
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            showImagePreview(file);
+            fileUploadButton.classList.add('file-selected');
+            fileUploadButton.querySelector('.file-upload-text').textContent = 'Image selected: ' + file.name;
+            fileUploadButton.querySelector('.file-upload-icon').className = 'fas fa-check-circle file-upload-icon';
+        } else {
+            clearImageSelection();
+        }
+    });
+    
+    uploadForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const fileInput = document.getElementById('photo');
+        const file = fileInput.files[0];
+        
+        if (!file) {
+            showError('Please select a photo to upload');
+            return;
+        }
+        
+        // Show loading state
+        showLoading();
+        
+        // Create FormData and send to server
+        const formData = new FormData();
+        formData.append('photo', file);
+        
+        // Add CSRF token to FormData
+        const csrfToken = getCsrfToken();
+        if (csrfToken) {
+            formData.append('csrf_token', csrfToken);
+        } else {
+            showError('CSRF token not found. Please refresh the page.');
+            return;
+        }
+        
+        fetch('{{ url_for("barcode.scan") }}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            
+            if (data.success) {
+                showResults(data);
+            } else {
+                showError(data.error || 'Unknown error occurred');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            showError('Network error: ' + error.message);
+        });
+    });
+    
+    function showLoading() {
+        uploadForm.parentElement.parentElement.style.display = 'none';
+        resultsDiv.style.display = 'none';
+        errorDiv.style.display = 'none';
+        loadingDiv.style.display = 'block';
+        scanBtn.disabled = true;
+    }
+    
+    function hideLoading() {
+        loadingDiv.style.display = 'none';
+        scanBtn.disabled = false;
+    }
+    
+    function showResults(data) {
+        const productInfo = document.getElementById('productInfo');
+        const food = data.food;
+        
+        // Calculate nutrition for 100g serving
+        const nutrition = food.nutrition;
+        const calories = Math.round(nutrition.calories_per_100g || 0);
+        const protein = Math.round((nutrition.protein_per_100g || 0) * 10) / 10;
+        const carbs = Math.round((nutrition.carbs_per_100g || 0) * 10) / 10;
+        const fat = Math.round((nutrition.fat_per_100g || 0) * 10) / 10;
+        
+        productInfo.innerHTML = `
+            <div class="row">
+                <div class="col-md-8">
+                    <h6>${food.name}</h6>
+                    ${food.brand ? `<p class="text-muted mb-1">Brand: ${food.brand}</p>` : ''}
+                    <p class="text-muted mb-2">Barcode: ${data.barcode}</p>
+                </div>
+                <div class="col-md-4">
+                    <div class="nutrition-summary">
+                        <small class="text-muted">Per 100g:</small><br>
+                        <strong>${calories} cal</strong><br>
+                        <small>P: ${protein}g | C: ${carbs}g | F: ${fat}g</small>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Set the food ID for logging
+        document.getElementById('foodId').value = food.id;
+        
+        // Show the product info and results
+        productInfo.style.display = 'block';
+        resultsDiv.style.display = 'block';
+    }
+    
+    function showError(message) {
+        document.getElementById('errorMessage').textContent = message;
+        errorDiv.style.display = 'block';
+    }
+    
+    function getCsrfToken() {
+        // Try to get CSRF token from hidden form field first
+        const tokenInput = document.getElementById('csrf_token');
+        if (tokenInput && tokenInput.value) {
+            return tokenInput.value;
+        }
+        
+        // Fallback: try to get from meta tag
+        const metaToken = document.querySelector('meta[name="csrf-token"]');
+        if (metaToken) {
+            return metaToken.getAttribute('content');
+        }
+        
+        // Fallback: try to get from cookie if available
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            const [name, value] = cookie.trim().split('=');
+            if (name === 'csrf_token') {
+                return decodeURIComponent(value);
+            }
+        }
+        
+        return '';
+    }
+    
+    function showImagePreview(file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImage.src = e.target.result;
+            imagePreview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+function clearImageSelection() {
+    const fileInput = document.getElementById('photo');
+    const fileUploadButton = document.getElementById('fileUploadButton');
+    const imagePreview = document.getElementById('imagePreview');
+    
+    fileInput.value = '';
+    imagePreview.style.display = 'none';
+    fileUploadButton.classList.remove('file-selected');
+    fileUploadButton.querySelector('.file-upload-text').textContent = 'Tap to take photo or select image';
+    fileUploadButton.querySelector('.file-upload-icon').className = 'fas fa-camera file-upload-icon';
+}
+
+function resetForm() {
+    const uploadSection = document.getElementById('uploadForm').parentElement.parentElement;
+    uploadSection.style.display = 'block';
+    document.getElementById('resultsDiv').style.display = 'none';
+    document.getElementById('errorDiv').style.display = 'none';
+    document.getElementById('loadingDiv').style.display = 'none';
+    document.getElementById('productInfo').style.display = 'none';
+    clearImageSelection();
+}
+</script>
+{% endblock %}
