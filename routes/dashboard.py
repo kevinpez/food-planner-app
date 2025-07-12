@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user
 from models import db, FoodLog, DailyPlan, AIRecommendation
 from datetime import datetime, date, timedelta
-from sqlalchemy import func, and_
+from sqlalchemy import func, and_, or_
 import json
 
 dashboard_bp = Blueprint('dashboard', __name__)
@@ -88,7 +88,8 @@ def nutrition():
             }
         
         # Add this log's nutrition to the date
-        nutrition_data[log_date]['calories'] += log.get_calories()
+        calories = log.get_calories() or 0
+        nutrition_data[log_date]['calories'] += calories
         
         # Get other nutrients
         nutrients = log.get_nutrients()
@@ -145,9 +146,11 @@ def meal_planner():
 @dashboard_bp.route('/ai-recommendations')
 @login_required
 def ai_recommendations():
-    # Get all recommendations for the user
-    recommendations = AIRecommendation.query.filter_by(
-        user_id=current_user.id
+    # Get recommendations for the user, excluding thumbs down (-1 rating)
+    # Include NULL ratings (no rating yet) and thumbs up (1 rating)
+    recommendations = AIRecommendation.query.filter(
+        AIRecommendation.user_id == current_user.id,
+        or_(AIRecommendation.rating.is_(None), AIRecommendation.rating == 1)
     ).order_by(AIRecommendation.created_at.desc()).limit(20).all()
     
     return render_template('dashboard/ai_recommendations.html',

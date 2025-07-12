@@ -47,7 +47,7 @@
                                             <div>
                                                 <h6 class="mb-1">{{ log.food.name }}</h6>
                                                 <small class="text-muted">
-                                                    {{ log.quantity }}g • {{ "%.0f"|format(log.get_calories()) }} cal
+                                                    {{ log.quantity }}g • {{ "%.0f"|format(log.get_calories() or 0) }} cal
                                                     {% if log.food.brand %} • {{ log.food.brand }}{% endif %}
                                                 </small>
                                             </div>
@@ -71,7 +71,11 @@
                                     </div>
                                 {% endfor %}
                                 
-                                {% set meal_calories = logged_by_meal[meal_type]|map(attribute='get_calories')|map('round')|sum %}
+                                {% set meal_calories = 0 %}
+                                {% for log in logged_by_meal[meal_type] %}
+                                    {% set meal_calories = meal_calories + (log.get_calories() or 0) %}
+                                {% endfor %}
+                                {% set meal_calories = meal_calories|round %}
                                 <div class="meal-summary mt-2">
                                     <small class="text-muted">
                                         <strong>{{ meal_type|title }} Total: {{ "%.0f"|format(meal_calories) }} calories</strong>
@@ -101,12 +105,14 @@
                 </h5>
             </div>
             <div class="card-body">
-                {% set total_calories = 0 %}
+                {% set ns = namespace(total_calories=0) %}
                 {% for meal_logs in logged_by_meal.values() %}
                     {% for log in meal_logs %}
-                        {% set total_calories = total_calories + log.get_calories() %}
+                        {% set log_calories = log.get_calories() or 0 %}
+                        {% set ns.total_calories = ns.total_calories + log_calories %}
                     {% endfor %}
                 {% endfor %}
+                {% set total_calories = ns.total_calories|round %}
                 {% set calorie_goal = current_user.daily_calorie_goal %}
                 {% set calorie_progress = (total_calories / calorie_goal * 100) if calorie_goal > 0 else 0 %}
                 
@@ -136,7 +142,11 @@
                     <h6>Meal Breakdown</h6>
                     {% for meal_type in meal_types %}
                         {% if logged_by_meal.get(meal_type) %}
-                            {% set meal_calories = logged_by_meal[meal_type]|map(attribute='get_calories')|map('round')|sum %}
+                            {% set meal_calories = 0 %}
+                            {% for log in logged_by_meal[meal_type] %}
+                                {% set meal_calories = meal_calories + (log.get_calories() or 0) %}
+                            {% endfor %}
+                            {% set meal_calories = meal_calories|round %}
                             {% set meal_percentage = (meal_calories / total_calories * 100) if total_calories > 0 else 0 %}
                             <div class="d-flex justify-content-between mb-1">
                                 <span class="meal-badge {{ meal_type }} small">{{ meal_type|title }}</span>

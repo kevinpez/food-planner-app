@@ -132,6 +132,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const scanButton = document.getElementById('scan-barcode');
     const searchButton = document.getElementById('search-name');
     
+    // Set default meal type based on time
+    const now = new Date();
+    const hour = now.getHours();
+    const mealTypeSelect = document.getElementById('meal-type-select');
+    
+    if (hour >= 5 && hour < 11) {
+        mealTypeSelect.value = 'breakfast';
+    } else if (hour >= 11 && hour < 17) {
+        mealTypeSelect.value = 'lunch';
+    } else if (hour >= 17 && hour < 22) {
+        mealTypeSelect.value = 'dinner';
+    } else {
+        mealTypeSelect.value = 'snack';
+    }
+    
     // UPC search
     scanButton.addEventListener('click', function() {
         const upc = upcInput.value.trim();
@@ -168,7 +183,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 async function searchFoodByName(name) {
     const resultsDiv = document.getElementById('search-results');
-    resultsDiv.innerHTML = '<div class="spinner"></div>';
+    resultsDiv.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2">Searching...</p></div>';
     
     try {
         const response = await fetch(`/api/food/search-name?q=${encodeURIComponent(name)}`);
@@ -183,6 +198,146 @@ async function searchFoodByName(name) {
         resultsDiv.innerHTML = '<div class="alert alert-danger">Error searching for food. Please try again.</div>';
         console.error('Error searching food:', error);
     }
+}
+
+async function searchFoodByUPC(upc) {
+    const resultsDiv = document.getElementById('search-results');
+    resultsDiv.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2">Looking up UPC...</p></div>';
+    
+    try {
+        const response = await fetch(`/api/food/search-upc/${upc}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            displayFoodSearchResults([data.food]);
+        } else {
+            resultsDiv.innerHTML = `<div class="alert alert-warning">${data.message}</div>`;
+        }
+    } catch (error) {
+        resultsDiv.innerHTML = '<div class="alert alert-danger">Error searching for UPC. Please try again.</div>';
+        console.error('Error searching UPC:', error);
+    }
+}
+
+function displayFoodSearchResults(foods) {
+    const resultsDiv = document.getElementById('search-results');
+    
+    if (!foods || foods.length === 0) {
+        resultsDiv.innerHTML = '<div class="alert alert-info">No foods found. Try a different search term.</div>';
+        return;
+    }
+    
+    let html = '<div class="row">';
+    
+    foods.forEach(food => {
+        const nutrition = food.nutrition_data || {};
+        const calories = Math.round(nutrition.calories_per_100g || 0);
+        const protein = Math.round((nutrition.protein_per_100g || 0) * 10) / 10;
+        const carbs = Math.round((nutrition.carbs_per_100g || 0) * 10) / 10;
+        const fat = Math.round((nutrition.fat_per_100g || 0) * 10) / 10;
+        
+        html += `
+            <div class="col-md-6 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h6 class="card-title">${food.name}</h6>
+                        ${food.brand ? `<p class="text-muted small mb-2">Brand: ${food.brand}</p>` : ''}
+                        <div class="nutrition-info mb-3">
+                            <small class="text-muted">Per 100g:</small><br>
+                            <strong>${calories} cal</strong><br>
+                            <small>P: ${protein}g | C: ${carbs}g | F: ${fat}g</small>
+                        </div>
+                        <button class="btn btn-primary btn-sm w-100" onclick="logFood(${food.id}, '${food.name.replace(/'/g, "\\'")}')">
+                            <i class="fas fa-plus me-1"></i>Log This Food
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    resultsDiv.innerHTML = html;
+}
+
+async function logFood(foodId, foodName) {
+    const quantity = document.getElementById('quantity-input').value;
+    const mealType = document.getElementById('meal-type-select').value;
+    const notes = document.getElementById('notes-input').value;
+    
+    console.log('Logging food:', { foodId, foodName, quantity, mealType, notes });
+    
+    if (!quantity || quantity <= 0) {
+        alert('Please enter a valid quantity');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/food/log', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({
+                food_id: foodId,
+                quantity: parseFloat(quantity),
+                meal_type: mealType,
+                notes: notes
+            })
+        });
+        
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+        
+        if (!response.ok) {
+            const text = await response.text();
+            console.error('Response text:', text);
+            throw new Error(`HTTP ${response.status}: ${text}`);
+        }
+        
+        const data = await response.json();
+        console.log('Response data:', data);
+        
+        if (data.success) {
+            alert(`Successfully logged ${quantity}g of ${foodName}!`);
+            // Clear the form
+            document.getElementById('quantity-input').value = '100';
+            document.getElementById('notes-input').value = '';
+            // Redirect to dashboard
+            window.location.href = '/dashboard/';
+        } else {
+            console.error('API Response:', data);
+            console.error('Response status:', response.status);
+            alert('Error logging food: ' + (data.message || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('Network error while logging food');
+        console.error('Error logging food:', error);
+    }
+}
+
+function getCsrfToken() {
+    // Try to get CSRF token from meta tag
+    const metaToken = document.querySelector('meta[name="csrf-token"]');
+    if (metaToken) {
+        const token = metaToken.getAttribute('content');
+        console.log('Found CSRF token from meta tag:', token ? 'Yes' : 'No');
+        return token;
+    }
+    
+    // Fallback: try to get from cookie if available
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name === 'csrf_token') {
+            console.log('Found CSRF token from cookie');
+            return decodeURIComponent(value);
+        }
+    }
+    
+    console.log('No CSRF token found');
+    return '';
 }
 </script>
 {% endblock %}

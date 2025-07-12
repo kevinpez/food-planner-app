@@ -205,8 +205,71 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize any dashboard-specific functionality
-    console.log('Dashboard loaded');
+    // Initialize AI recommendation functionality
+    const aiRecommendBtn = document.getElementById('ai-recommend-btn');
+    
+    if (aiRecommendBtn) {
+        aiRecommendBtn.addEventListener('click', function() {
+            getAIRecommendation();
+        });
+    }
+    
+    function getAIRecommendation() {
+        const btn = document.getElementById('ai-recommend-btn');
+        const originalText = btn.innerHTML;
+        
+        // Show loading state
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Getting suggestion...';
+        btn.disabled = true;
+        
+        fetch('/api/ai/recommend', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({
+                'type': 'meal'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Reload the page to show the new recommendation
+                location.reload();
+            } else {
+                alert('Error getting recommendation: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Network error while getting recommendation');
+        })
+        .finally(() => {
+            // Reset button state
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        });
+    }
+    
+    function getCsrfToken() {
+        // Try to get CSRF token from meta tag
+        const metaToken = document.querySelector('meta[name="csrf-token"]');
+        if (metaToken) {
+            return metaToken.getAttribute('content');
+        }
+        
+        // Fallback: try to get from cookie if available
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            const [name, value] = cookie.trim().split('=');
+            if (name === 'csrf_token') {
+                return decodeURIComponent(value);
+            }
+        }
+        
+        return '';
+    }
 });
 </script>
 {% endblock %}

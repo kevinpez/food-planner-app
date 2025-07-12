@@ -79,14 +79,26 @@ class FoodLog(db.Model):
     def get_calories(self):
         food_nutrition = self.food.get_nutrition_data()
         calories_per_100g = food_nutrition.get('calories_per_100g', 0)
+        
+        # Ensure calories_per_100g is numeric
+        try:
+            calories_per_100g = float(calories_per_100g) if calories_per_100g is not None else 0
+        except (ValueError, TypeError):
+            calories_per_100g = 0
+            
         return (calories_per_100g * self.quantity) / 100
     
     def get_nutrients(self):
         food_nutrition = self.food.get_nutrition_data()
         nutrients = {}
         for nutrient, value_per_100g in food_nutrition.items():
-            if isinstance(value_per_100g, (int, float)):
-                nutrients[nutrient] = (value_per_100g * self.quantity) / 100
+            try:
+                # Convert to float and calculate based on quantity
+                numeric_value = float(value_per_100g) if value_per_100g is not None else 0
+                nutrients[nutrient] = (numeric_value * self.quantity) / 100
+            except (ValueError, TypeError):
+                # Skip non-numeric values
+                continue
         return nutrients
     
     def __repr__(self):
@@ -127,6 +139,7 @@ class AIRecommendation(db.Model):
     context_data = db.Column(db.Text)  # JSON string with context used for recommendation
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_used = db.Column(db.Boolean, default=False)
+    rating = db.Column(db.Integer)  # 1 for thumbs up, -1 for thumbs down, None for no rating
     
     def set_context_data(self, context_dict):
         self.context_data = json.dumps(context_dict)

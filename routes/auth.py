@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
+from flask_wtf.csrf import validate_csrf, ValidationError
 from models import db, User
 from werkzeug.security import generate_password_hash
 
@@ -11,6 +12,13 @@ def login():
         return redirect(url_for('dashboard.main'))
     
     if request.method == 'POST':
+        # Validate CSRF token
+        try:
+            validate_csrf(request.form.get('csrf_token'))
+        except ValidationError:
+            flash('Security token validation failed. Please try again.', 'error')
+            return redirect(url_for('auth.login'))
+        
         username = request.form.get('username')
         password = request.form.get('password')
         
@@ -36,6 +44,13 @@ def register():
         return redirect(url_for('dashboard.main'))
     
     if request.method == 'POST':
+        # Validate CSRF token
+        try:
+            validate_csrf(request.form.get('csrf_token'))
+        except ValidationError:
+            flash('Security token validation failed. Please try again.', 'error')
+            return redirect(url_for('auth.register'))
+        
         username = request.form.get('username')
         email = request.form.get('email')
         password = request.form.get('password')
@@ -93,12 +108,24 @@ def logout():
 @auth_bp.route('/profile')
 @login_required
 def profile():
-    return render_template('auth/profile.html', user=current_user)
+    from datetime import date
+    
+    # Calculate days active
+    days_active = (date.today() - current_user.created_at.date()).days + 1
+    
+    return render_template('auth/profile.html', user=current_user, days_active=days_active)
 
 @auth_bp.route('/profile/edit', methods=['GET', 'POST'])
 @login_required
 def edit_profile():
     if request.method == 'POST':
+        # Validate CSRF token
+        try:
+            validate_csrf(request.form.get('csrf_token'))
+        except ValidationError:
+            flash('Security token validation failed. Please try again.', 'error')
+            return redirect(url_for('auth.edit_profile'))
+        
         current_user.daily_calorie_goal = request.form.get('daily_calorie_goal', 2000, type=int)
         current_user.preferred_cuisine = request.form.get('preferred_cuisine', '')
         

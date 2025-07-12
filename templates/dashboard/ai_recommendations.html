@@ -10,15 +10,13 @@
                 <i class="fas fa-robot text-primary me-2"></i>
                 AI Recommendations
             </h2>
-            <button class="btn btn-primary" onclick="getNewRecommendation()">
-                <i class="fas fa-magic me-1"></i>Get New Recommendation
-            </button>
         </div>
     </div>
 </div>
 
 <div class="row">
     <div class="col-lg-8">
+        <div id="recommendations-container">
         {% if recommendations %}
             {% for recommendation in recommendations %}
                 <div class="card mb-3">
@@ -31,13 +29,18 @@
                                 </h6>
                             </div>
                             <div class="btn-group btn-group-sm">
-                                {% if not recommendation.is_used %}
-                                    <button class="btn btn-outline-success" onclick="markAsUsed({{ recommendation.id }})">
-                                        <i class="fas fa-check"></i> Mark as Used
-                                    </button>
-                                {% else %}
-                                    <span class="badge bg-success">Used</span>
-                                {% endif %}
+                                <button class="btn {{ 'btn-success' if recommendation.rating == 1 else 'btn-outline-success' }} rating-btn" 
+                                        data-rec-id="{{ recommendation.id }}" 
+                                        data-rating="1"
+                                        title="Thumbs up">
+                                    <i class="fas fa-thumbs-up"></i>
+                                </button>
+                                <button class="btn {{ 'btn-danger' if recommendation.rating == -1 else 'btn-outline-danger' }} rating-btn" 
+                                        data-rec-id="{{ recommendation.id }}" 
+                                        data-rating="-1"
+                                        title="Thumbs down">
+                                    <i class="fas fa-thumbs-down"></i>
+                                </button>
                             </div>
                         </div>
                         
@@ -83,8 +86,7 @@
                 </div>
             </div>
         {% endif %}
-        
-        <div id="new-recommendations"></div>
+        </div>
     </div>
     
     <div class="col-lg-4">
@@ -219,20 +221,39 @@ async function getNewRecommendation(type = 'meal') {
                                     ${timeString} <span class="badge bg-success ms-2">New</span>
                                 </h6>
                             </div>
-                            <button class="btn btn-outline-success btn-sm" onclick="markAsUsed(${data.recommendation.id})">
-                                <i class="fas fa-check"></i> Mark as Used
-                            </button>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-success rating-btn" data-rec-id="${data.recommendation.id}" data-rating="1" title="Thumbs up">
+                                    <i class="fas fa-thumbs-up"></i>
+                                </button>
+                                <button class="btn btn-outline-danger rating-btn" data-rec-id="${data.recommendation.id}" data-rating="-1" title="Thumbs down">
+                                    <i class="fas fa-thumbs-down"></i>
+                                </button>
+                            </div>
                         </div>
                         <p class="card-text">${data.recommendation.text}</p>
                     </div>
                 </div>
             `;
             
-            const newRecommendationsDiv = document.getElementById('new-recommendations');
-            newRecommendationsDiv.innerHTML = recommendationHtml + newRecommendationsDiv.innerHTML;
+            const recommendationsContainer = document.getElementById('recommendations-container');
+            
+            // Create a temporary div to hold the new recommendation HTML
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = recommendationHtml;
+            const newRecommendationElement = tempDiv.firstElementChild;
+            
+            // Check if there's a "No recommendations" card and remove it
+            const noRecommendationsCard = recommendationsContainer.querySelector('.card .fa-robot');
+            if (noRecommendationsCard) {
+                const cardToRemove = noRecommendationsCard.closest('.card');
+                cardToRemove.remove();
+            }
+            
+            // Insert at the very beginning of the container
+            recommendationsContainer.insertBefore(newRecommendationElement, recommendationsContainer.firstChild);
             
             // Scroll to the new recommendation
-            newRecommendationsDiv.scrollIntoView({ behavior: 'smooth' });
+            newRecommendationElement.scrollIntoView({ behavior: 'smooth' });
         } else {
             alert('Error getting AI recommendation: ' + data.message);
         }
@@ -245,23 +266,72 @@ async function getNewRecommendation(type = 'meal') {
     }
 }
 
-async function markAsUsed(recommendationId) {
+async function rateRecommendation(recommendationId, rating, buttonElement) {
+    console.log('rateRecommendation called with:', recommendationId, rating);
     try {
-        const response = await fetch(`/api/ai/recommendation/${recommendationId}/used`, {
+        console.log('Making fetch request to:', `/api/ai/recommendation/${recommendationId}/rate`);
+        const response = await fetch(`/api/ai/recommendation/${recommendationId}/rate`, {
             method: 'POST',
             headers: {
+                'Content-Type': 'application/json',
                 'X-CSRFToken': '{{ csrf_token() }}'
-            }
+            },
+            body: JSON.stringify({ rating: rating })
         });
         
-        if (response.ok) {
-            // Update the button to show "Used"
-            const button = event.target;
-            button.outerHTML = '<span class="badge bg-success">Used</span>';
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('HTTP Error:', response.status, errorText);
+            alert(`Error saving rating (${response.status}): ${errorText}`);
+            return;
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            if (rating === -1) {
+                // Hide the recommendation immediately when thumbs down
+                const recommendationCard = buttonElement.closest('.card');
+                recommendationCard.style.transition = 'opacity 0.3s ease';
+                recommendationCard.style.opacity = '0';
+                setTimeout(() => {
+                    recommendationCard.remove();
+                }, 300);
+            } else {
+                // Update the button styles to reflect the rating
+                const buttonGroup = buttonElement.parentNode;
+                const thumbsUpBtn = buttonGroup.querySelector('[data-rating="1"]');
+                const thumbsDownBtn = buttonGroup.querySelector('[data-rating="-1"]');
+                
+                // Reset both buttons to outline style
+                thumbsUpBtn.className = 'btn btn-outline-success rating-btn';
+                thumbsDownBtn.className = 'btn btn-outline-danger rating-btn';
+                
+                // Highlight the selected rating
+                if (rating === 1) {
+                    thumbsUpBtn.className = 'btn btn-success rating-btn';
+                }
+            }
+        } else {
+            alert('Error saving rating: ' + data.message);
         }
     } catch (error) {
-        console.error('Error marking recommendation as used:', error);
+        console.error('Error rating recommendation:', error);
+        alert('Error saving rating. Please try again.');
     }
 }
+
+// Add event listeners for rating buttons
+document.addEventListener('DOMContentLoaded', function() {
+    // Use event delegation to handle dynamically added buttons too
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.rating-btn')) {
+            const button = e.target.closest('.rating-btn');
+            const recId = button.getAttribute('data-rec-id');
+            const rating = parseInt(button.getAttribute('data-rating'));
+            rateRecommendation(recId, rating, button);
+        }
+    });
+});
 </script>
 {% endblock %}

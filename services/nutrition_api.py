@@ -2,6 +2,13 @@ import requests
 from models import db, Food
 from config import Config
 
+def safe_float(value, default=0):
+    """Safely convert value to float, return default if conversion fails"""
+    try:
+        return float(value) if value is not None else default
+    except (ValueError, TypeError):
+        return default
+
 def search_food_by_upc(upc_code):
     """Search for food by UPC code using Open Food Facts API"""
     url = f"{Config.OPEN_FOOD_FACTS_BASE_URL}/{upc_code}.json"
@@ -18,13 +25,13 @@ def search_food_by_upc(upc_code):
             # Extract nutrition data
             nutriments = product.get('nutriments', {})
             nutrition_data = {
-                'calories_per_100g': nutriments.get('energy-kcal_100g', 0),
-                'protein_per_100g': nutriments.get('proteins_100g', 0),
-                'carbs_per_100g': nutriments.get('carbohydrates_100g', 0),
-                'fat_per_100g': nutriments.get('fat_100g', 0),
-                'fiber_per_100g': nutriments.get('fiber_100g', 0),
-                'sugar_per_100g': nutriments.get('sugars_100g', 0),
-                'sodium_per_100g': nutriments.get('sodium_100g', 0)
+                'calories_per_100g': safe_float(nutriments.get('energy-kcal_100g', 0)),
+                'protein_per_100g': safe_float(nutriments.get('proteins_100g', 0)),
+                'carbs_per_100g': safe_float(nutriments.get('carbohydrates_100g', 0)),
+                'fat_per_100g': safe_float(nutriments.get('fat_100g', 0)),
+                'fiber_per_100g': safe_float(nutriments.get('fiber_100g', 0)),
+                'sugar_per_100g': safe_float(nutriments.get('sugars_100g', 0)),
+                'sodium_per_100g': safe_float(nutriments.get('sodium_100g', 0))
             }
             
             # Create new food item
@@ -208,13 +215,13 @@ def get_food_by_barcode(barcode):
             # Extract nutrition data
             nutriments = product.get('nutriments', {})
             nutrition_data = {
-                'calories_per_100g': nutriments.get('energy-kcal_100g', 0),
-                'protein_per_100g': nutriments.get('proteins_100g', 0),
-                'carbs_per_100g': nutriments.get('carbohydrates_100g', 0),
-                'fat_per_100g': nutriments.get('fat_100g', 0),
-                'fiber_per_100g': nutriments.get('fiber_100g', 0),
-                'sugar_per_100g': nutriments.get('sugars_100g', 0),
-                'sodium_per_100g': nutriments.get('sodium_100g', 0)
+                'calories_per_100g': safe_float(nutriments.get('energy-kcal_100g', 0)),
+                'protein_per_100g': safe_float(nutriments.get('proteins_100g', 0)),
+                'carbs_per_100g': safe_float(nutriments.get('carbohydrates_100g', 0)),
+                'fat_per_100g': safe_float(nutriments.get('fat_100g', 0)),
+                'fiber_per_100g': safe_float(nutriments.get('fiber_100g', 0)),
+                'sugar_per_100g': safe_float(nutriments.get('sugars_100g', 0)),
+                'sodium_per_100g': safe_float(nutriments.get('sodium_100g', 0))
             }
             
             # Return data in format expected by barcode scanner

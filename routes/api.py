@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_login import login_required, current_user
+from flask_wtf.csrf import validate_csrf, ValidationError
 from models import db, Food, FoodLog, AIRecommendation
 from services.nutrition_api import search_food_by_upc, search_food_by_name
 from services.ai_service import get_meal_recommendation
@@ -99,6 +100,12 @@ def search_name():
 @api_bp.route('/food/log', methods=['POST'])
 @login_required
 def log_food():
+    # Validate CSRF token
+    try:
+        validate_csrf(request.headers.get('X-CSRFToken'))
+    except ValidationError:
+        return jsonify({'success': False, 'message': 'CSRF token validation failed'}), 400
+    
     data = request.get_json()
     
     food_id = data.get('food_id')
@@ -155,6 +162,12 @@ def log_food():
 @api_bp.route('/ai/recommend', methods=['POST'])
 @login_required
 def ai_recommend():
+    # Validate CSRF token
+    try:
+        validate_csrf(request.headers.get('X-CSRFToken'))
+    except ValidationError:
+        return jsonify({'success': False, 'message': 'CSRF token validation failed'}), 400
+    
     data = request.get_json()
     recommendation_type = data.get('type', 'meal')
     
@@ -210,6 +223,50 @@ def ai_recommend():
         return jsonify({
             'success': False,
             'message': f'Error getting AI recommendation: {str(e)}'
+        }), 500
+
+@api_bp.route('/ai/recommendation/<int:recommendation_id>/rate', methods=['POST'])
+@login_required
+def rate_recommendation(recommendation_id):
+    print(f"Rate recommendation called with ID: {recommendation_id}")  # Debug log
+    try:
+        data = request.get_json()
+        rating = data.get('rating')  # 1 for thumbs up, -1 for thumbs down
+        
+        if rating not in [1, -1]:
+            return jsonify({
+                'success': False,
+                'message': 'Rating must be 1 (thumbs up) or -1 (thumbs down)'
+            }), 400
+        
+        # Find the recommendation
+        recommendation = AIRecommendation.query.filter_by(
+            id=recommendation_id,
+            user_id=current_user.id
+        ).first()
+        
+        if not recommendation:
+            return jsonify({
+                'success': False,
+                'message': 'Recommendation not found'
+            }), 404
+        
+        # Update the rating
+        recommendation.rating = rating
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Rating saved successfully'
+        })
+    
+    except Exception as e:
+        print(f"Error in rate_recommendation: {str(e)}")  # Add logging
+        import traceback
+        traceback.print_exc()  # Print full traceback
+        return jsonify({
+            'success': False,
+            'message': f'Error saving rating: {str(e)}'
         }), 500
 
 @api_bp.route('/nutrition/summary')

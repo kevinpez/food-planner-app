@@ -99,11 +99,14 @@ def extract_barcode_from_image(image_path):
         raise Exception(f"Failed to extract barcode from image: {str(e)}")
 
 def get_meal_recommendation(recent_logs, dietary_restrictions, calorie_goal, preferred_cuisine, recommendation_type='meal'):
-    """Get AI-powered meal recommendation using Anthropic Claude"""
+    """Get AI-powered meal recommendation using Anthropic Claude or OpenAI"""
     
-    client = get_client()
-    if not client:
-        return "AI recommendations are not available. Please configure your Anthropic API key."
+    # Try Anthropic first, then fallback to OpenAI
+    anthropic_client = get_client()
+    openai_client = get_openai_client()
+    
+    if not anthropic_client and not openai_client:
+        return "AI recommendations are not available. Please configure either Anthropic or OpenAI API key."
     
     try:
         # Prepare context from recent food logs
@@ -148,20 +151,34 @@ def get_meal_recommendation(recent_logs, dietary_restrictions, calorie_goal, pre
         and include brief reasoning for your recommendation.
         """
         
-        # Get response from Claude
-        response = client.messages.create(
-            model="claude-3-sonnet-20240229",
-            max_tokens=300,
-            temperature=0.7,
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ]
-        )
+        # Get response from available AI provider
+        if anthropic_client:
+            response = anthropic_client.messages.create(
+                model="claude-3-sonnet-20240229",
+                max_tokens=300,
+                temperature=0.7,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ]
+            )
+            return response.content[0].text
         
-        return response.content[0].text
+        elif openai_client:
+            response = openai_client.chat.completions.create(
+                model="gpt-4",
+                max_tokens=300,
+                temperature=0.7,
+                messages=[
+                    {
+                        "role": "user", 
+                        "content": prompt
+                    }
+                ]
+            )
+            return response.choices[0].message.content
     
     except Exception as e:
         print(f"Error getting AI recommendation: {str(e)}")
@@ -170,9 +187,11 @@ def get_meal_recommendation(recent_logs, dietary_restrictions, calorie_goal, pre
 def get_health_insights(food_logs, user_preferences):
     """Get health insights based on food intake patterns"""
     
-    client = get_client()
-    if not client:
-        return "Health insights are not available. Please configure your Anthropic API key."
+    anthropic_client = get_client()
+    openai_client = get_openai_client()
+    
+    if not anthropic_client and not openai_client:
+        return "Health insights are not available. Please configure either Anthropic or OpenAI API key."
     
     try:
         # Analyze food patterns
@@ -224,19 +243,33 @@ def get_health_insights(food_logs, user_preferences):
         Keep insights positive and encouraging while being honest about areas for improvement.
         """
         
-        response = client.messages.create(
-            model="claude-3-sonnet-20240229",
-            max_tokens=400,
-            temperature=0.6,
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ]
-        )
+        if anthropic_client:
+            response = anthropic_client.messages.create(
+                model="claude-3-sonnet-20240229",
+                max_tokens=400,
+                temperature=0.6,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ]
+            )
+            return response.content[0].text
         
-        return response.content[0].text
+        elif openai_client:
+            response = openai_client.chat.completions.create(
+                model="gpt-4",
+                max_tokens=400,
+                temperature=0.6,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ]
+            )
+            return response.choices[0].message.content
     
     except Exception as e:
         print(f"Error getting health insights: {str(e)}")
@@ -245,9 +278,11 @@ def get_health_insights(food_logs, user_preferences):
 def get_food_alternatives(food_name, dietary_restrictions):
     """Get healthier alternatives for a specific food"""
     
-    client = get_client()
-    if not client:
-        return "Food alternatives are not available. Please configure your Anthropic API key."
+    anthropic_client = get_client()
+    openai_client = get_openai_client()
+    
+    if not anthropic_client and not openai_client:
+        return "Food alternatives are not available. Please configure either Anthropic or OpenAI API key."
     
     try:
         prompt = f"""
@@ -265,19 +300,33 @@ def get_food_alternatives(food_name, dietary_restrictions):
         Format your response as a simple list with brief explanations for each alternative.
         """
         
-        response = client.messages.create(
-            model="claude-3-sonnet-20240229",
-            max_tokens=250,
-            temperature=0.7,
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ]
-        )
+        if anthropic_client:
+            response = anthropic_client.messages.create(
+                model="claude-3-sonnet-20240229",
+                max_tokens=250,
+                temperature=0.7,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ]
+            )
+            return response.content[0].text
         
-        return response.content[0].text
+        elif openai_client:
+            response = openai_client.chat.completions.create(
+                model="gpt-4",
+                max_tokens=250,
+                temperature=0.7,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ]
+            )
+            return response.choices[0].message.content
     
     except Exception as e:
         print(f"Error getting food alternatives: {str(e)}")
@@ -286,9 +335,11 @@ def get_food_alternatives(food_name, dietary_restrictions):
 def analyze_daily_nutrition(daily_logs, calorie_goal):
     """Analyze a single day's nutrition and provide feedback"""
     
-    client = get_client()
-    if not client:
-        return "Nutrition analysis is not available. Please configure your Anthropic API key."
+    anthropic_client = get_client()
+    openai_client = get_openai_client()
+    
+    if not anthropic_client and not openai_client:
+        return "Nutrition analysis is not available. Please configure either Anthropic or OpenAI API key."
     
     try:
         total_calories = sum(log.get_calories() for log in daily_logs)
@@ -319,19 +370,33 @@ def analyze_daily_nutrition(daily_logs, calorie_goal):
         4. Keep it encouraging and under 100 words
         """
         
-        response = client.messages.create(
-            model="claude-3-sonnet-20240229",
-            max_tokens=150,
-            temperature=0.6,
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ]
-        )
+        if anthropic_client:
+            response = anthropic_client.messages.create(
+                model="claude-3-sonnet-20240229",
+                max_tokens=150,
+                temperature=0.6,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ]
+            )
+            return response.content[0].text
         
-        return response.content[0].text
+        elif openai_client:
+            response = openai_client.chat.completions.create(
+                model="gpt-4",
+                max_tokens=150,
+                temperature=0.6,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ]
+            )
+            return response.choices[0].message.content
     
     except Exception as e:
         print(f"Error analyzing daily nutrition: {str(e)}")
