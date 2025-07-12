@@ -10,7 +10,7 @@ class Config:
         SECRET_KEY = secrets.token_hex(32)
         print("WARNING: Using auto-generated SECRET_KEY. Set SECRET_KEY environment variable for production!")
     
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///food_planner.db'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///bellysattva.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY')
     OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')

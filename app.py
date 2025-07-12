@@ -57,6 +57,10 @@ def create_app():
     def about():
         return render_template('about.html')
     
+    @app.route('/support')
+    def support():
+        return render_template('support.html')
+    
     # Error handlers
     @app.errorhandler(404)
     def not_found(error):
