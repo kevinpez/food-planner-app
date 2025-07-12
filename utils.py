@@ -1,3 +1,4 @@
+import re
 import bleach
 from flask import current_app
 
@@ -24,7 +25,6 @@ def sanitize_form_data(form_data):
 
 def validate_email(email):
     """Basic email validation"""
-    import re
     pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     return re.match(pattern, email) is not None
 
@@ -34,6 +34,5 @@ def validate_username(username):
         return False
     
     # Username must be 3-20 characters, alphanumeric and underscore only
-    import re
     pattern = r'^[a-zA-Z0-9_]{3,20}$'
     return re.match(pattern, username) is not None

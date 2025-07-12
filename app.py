@@ -1,5 +1,5 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
-from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from flask import Flask, render_template, redirect, url_for, flash
+from flask_login import LoginManager, login_required, current_user
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
 from config import Config
@@ -9,7 +9,6 @@ from routes.food import food_bp
 from routes.api import api_bp
 from routes.dashboard import dashboard_bp
 from routes.barcode import barcode_bp
-import os
 
 def create_app():
     app = Flask(__name__)
