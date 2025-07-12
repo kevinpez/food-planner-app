@@ -16,8 +16,7 @@ def get_client():
             from anthropic import Anthropic
             client = Anthropic(api_key=Config.ANTHROPIC_API_KEY)
         except Exception as e:
-            print(f"Error initializing Anthropic client: {str(e)}")
-            client = False
+                client = False
     return client
 
 def get_openai_client():
@@ -31,8 +30,7 @@ def get_openai_client():
                 timeout=30.0
             )
         except Exception as e:
-            print(f"Error initializing OpenAI client: {str(e)}")
-            openai_client = False
+                openai_client = False
     return openai_client
 
 def extract_barcode_from_image(image_path):
@@ -95,7 +93,6 @@ def extract_barcode_from_image(image_path):
         return result
         
     except Exception as e:
-        print(f"Error extracting barcode: {str(e)}")
         raise Exception(f"Failed to extract barcode from image: {str(e)}")
 
 def _call_ai_service(prompt, max_tokens=300, temperature=0.7):
@@ -125,7 +122,6 @@ def _call_ai_service(prompt, max_tokens=300, temperature=0.7):
             )
             return response.choices[0].message.content
     except Exception as e:
-        print(f"Error calling AI service: {str(e)}")
         return None
 
 def get_meal_recommendation(recent_logs, dietary_restrictions, calorie_goal, preferred_cuisine, recommendation_type='meal'):
@@ -185,148 +181,5 @@ def get_meal_recommendation(recent_logs, dietary_restrictions, calorie_goal, pre
             return f"I'd be happy to help with meal recommendations, but I'm having trouble connecting to the AI service right now. Consider balancing your meals with lean proteins, whole grains, and plenty of vegetables to meet your {calorie_goal} calorie goal."
     
     except Exception as e:
-        print(f"Error getting AI recommendation: {str(e)}")
         return f"I'd be happy to help with meal recommendations, but I'm having trouble connecting to the AI service right now. Consider balancing your meals with lean proteins, whole grains, and plenty of vegetables to meet your {calorie_goal} calorie goal."
 
-def get_health_insights(food_logs, user_preferences):
-    """Get health insights based on food intake patterns"""
-    
-    if not get_client() and not get_openai_client():
-        return "Health insights are not available. Please configure either Anthropic or OpenAI API key."
-    
-    try:
-        # Analyze food patterns
-        meal_patterns = {}
-        total_calories = 0
-        food_categories = {}
-        
-        for log in food_logs:
-            # Track meal patterns
-            meal_type = log.meal_type
-            if meal_type not in meal_patterns:
-                meal_patterns[meal_type] = {'count': 0, 'calories': 0}
-            meal_patterns[meal_type]['count'] += 1
-            meal_patterns[meal_type]['calories'] += log.get_calories()
-            
-            total_calories += log.get_calories()
-            
-            # Simple food categorization based on name
-            food_name = log.food.name.lower()
-            if any(word in food_name for word in ['vegetable', 'fruit', 'salad', 'spinach', 'broccoli']):
-                food_categories['fruits_vegetables'] = food_categories.get('fruits_vegetables', 0) + 1
-            elif any(word in food_name for word in ['chicken', 'fish', 'beef', 'protein', 'egg']):
-                food_categories['proteins'] = food_categories.get('proteins', 0) + 1
-            elif any(word in food_name for word in ['bread', 'rice', 'pasta', 'grain']):
-                food_categories['grains'] = food_categories.get('grains', 0) + 1
-        
-        days_tracked = len(set(log.logged_at.date() for log in food_logs))
-        avg_daily_calories = total_calories / days_tracked if days_tracked > 0 else 0
-        
-        prompt = f"""
-        You are a nutrition expert analyzing a user's eating patterns. Provide helpful health insights based on the following data:
-        
-        USER PROFILE:
-        - Daily calorie goal: {user_preferences.get('calorie_goal', 2000)} calories
-        - Dietary restrictions: {', '.join(user_preferences.get('dietary_restrictions', [])) if user_preferences.get('dietary_restrictions') else 'None'}
-        
-        EATING PATTERNS (last {days_tracked} days):
-        - Average daily calories: {avg_daily_calories:.0f}
-        - Total calories tracked: {total_calories:.0f}
-        - Meal patterns: {json.dumps(meal_patterns, indent=2)}
-        - Food categories: {json.dumps(food_categories, indent=2)}
-        
-        Please provide 3-4 specific, actionable health insights based on this data. Focus on:
-        1. Calorie balance relative to goals
-        2. Meal timing and frequency
-        3. Food variety and nutritional balance
-        4. Specific recommendations for improvement
-        
-        Keep insights positive and encouraging while being honest about areas for improvement.
-        """
-        
-        result = _call_ai_service(prompt, max_tokens=400, temperature=0.6)
-        if result:
-            return result
-        else:
-            return "I'm having trouble analyzing your eating patterns right now. Keep tracking your meals and aim for a balanced diet with plenty of fruits, vegetables, lean proteins, and whole grains."
-    
-    except Exception as e:
-        print(f"Error getting health insights: {str(e)}")
-        return "I'm having trouble analyzing your eating patterns right now. Keep tracking your meals and aim for a balanced diet with plenty of fruits, vegetables, lean proteins, and whole grains."
-
-def get_food_alternatives(food_name, dietary_restrictions):
-    """Get healthier alternatives for a specific food"""
-    
-    if not get_client() and not get_openai_client():
-        return "Food alternatives are not available. Please configure either Anthropic or OpenAI API key."
-    
-    try:
-        prompt = f"""
-        You are a nutrition expert. A user is looking for healthier alternatives to "{food_name}".
-        
-        USER CONSTRAINTS:
-        - Dietary restrictions: {', '.join(dietary_restrictions) if dietary_restrictions else 'None'}
-        
-        Please suggest 3-4 healthier alternatives that:
-        1. Are similar in taste or texture
-        2. Are generally lower in calories or higher in nutritional value
-        3. Respect the user's dietary restrictions
-        4. Are commonly available
-        
-        Format your response as a simple list with brief explanations for each alternative.
-        """
-        
-        result = _call_ai_service(prompt, max_tokens=250, temperature=0.7)
-        if result:
-            return result
-        else:
-            return f"Consider healthier alternatives to {food_name} such as options that are baked instead of fried, have less added sugar, or include more whole grains and vegetables."
-    
-    except Exception as e:
-        print(f"Error getting food alternatives: {str(e)}")
-        return f"Consider healthier alternatives to {food_name} such as options that are baked instead of fried, have less added sugar, or include more whole grains and vegetables."
-
-def analyze_daily_nutrition(daily_logs, calorie_goal):
-    """Analyze a single day's nutrition and provide feedback"""
-    
-    if not get_client() and not get_openai_client():
-        return "Nutrition analysis is not available. Please configure either Anthropic or OpenAI API key."
-    
-    try:
-        total_calories = sum(log.get_calories() for log in daily_logs)
-        meals_by_type = {}
-        
-        for log in daily_logs:
-            meal_type = log.meal_type
-            if meal_type not in meals_by_type:
-                meals_by_type[meal_type] = []
-            meals_by_type[meal_type].append({
-                'food': log.food.name,
-                'calories': log.get_calories(),
-                'quantity': log.quantity
-            })
-        
-        prompt = f"""
-        You are a nutrition expert analyzing a user's daily food intake. Provide a brief analysis and suggestions.
-        
-        DAILY INTAKE:
-        - Total calories: {total_calories:.0f}
-        - Calorie goal: {calorie_goal}
-        - Meals: {json.dumps(meals_by_type, indent=2)}
-        
-        Please provide:
-        1. A brief assessment of the day's nutrition
-        2. What went well
-        3. One specific suggestion for improvement
-        4. Keep it encouraging and under 100 words
-        """
-        
-        result = _call_ai_service(prompt, max_tokens=150, temperature=0.6)
-        if result:
-            return result
-        else:
-            return f"Your daily intake was {total_calories:.0f} calories. Keep tracking your meals and aim for balanced nutrition throughout the day."
-    
-    except Exception as e:
-        print(f"Error analyzing daily nutrition: {str(e)}")
-        return f"Your daily intake was {total_calories:.0f} calories. Keep tracking your meals and aim for balanced nutrition throughout the day."

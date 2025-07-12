@@ -1,7 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 from flask_wtf.csrf import validate_csrf, ValidationError
-from werkzeug.utils import secure_filename
 from models import db, Food, FoodLog
 from services.ai_service import extract_barcode_from_image
 from services.nutrition_api import get_food_by_barcode

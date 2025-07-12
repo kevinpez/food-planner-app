@@ -228,7 +228,6 @@ def ai_recommend():
 @api_bp.route('/ai/recommendation/<int:recommendation_id>/rate', methods=['POST'])
 @login_required
 def rate_recommendation(recommendation_id):
-    print(f"Rate recommendation called with ID: {recommendation_id}")  # Debug log
     try:
         data = request.get_json()
         rating = data.get('rating')  # 1 for thumbs up, -1 for thumbs down
@@ -261,9 +260,6 @@ def rate_recommendation(recommendation_id):
         })
     
     except Exception as e:
-        print(f"Error in rate_recommendation: {str(e)}")  # Add logging
-        import traceback
-        traceback.print_exc()  # Print full traceback
         return jsonify({
             'success': False,
             'message': f'Error saving rating: {str(e)}'

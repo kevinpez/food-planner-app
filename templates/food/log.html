@@ -21,7 +21,7 @@
             <div class="card-body">
                 <!-- Search Methods -->
                 <div class="row mb-3 equal-height-cards">
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <div class="card h-100">
                             <div class="card-body text-center d-flex flex-column">
                                 <i class="fas fa-camera fa-3x text-warning mb-3"></i>
@@ -34,22 +34,7 @@
                         </div>
                     </div>
                     
-                    <div class="col-md-4">
-                        <div class="card h-100">
-                            <div class="card-body text-center d-flex flex-column">
-                                <i class="fas fa-barcode fa-3x text-primary mb-3"></i>
-                                <h6>UPC Lookup</h6>
-                                <div class="flex-grow-1 d-flex flex-column justify-content-center">
-                                    <input type="text" id="upc-input" class="form-control mb-2" placeholder="Enter UPC code">
-                                </div>
-                                <button class="btn btn-primary mt-auto" id="scan-barcode">
-                                    <i class="fas fa-search me-1"></i>Search UPC
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <div class="card h-100">
                             <div class="card-body text-center d-flex flex-column">
                                 <i class="fas fa-search fa-3x text-success mb-3"></i>
@@ -127,9 +112,7 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const upcInput = document.getElementById('upc-input');
     const nameInput = document.getElementById('name-input');
-    const scanButton = document.getElementById('scan-barcode');
     const searchButton = document.getElementById('search-name');
     
     // Set default meal type based on time
@@ -147,16 +130,6 @@ document.addEventListener('DOMContentLoaded', function() {
         mealTypeSelect.value = 'snack';
     }
     
-    // UPC search
-    scanButton.addEventListener('click', function() {
-        const upc = upcInput.value.trim();
-        if (upc) {
-            searchFoodByUPC(upc);
-        } else {
-            alert('Please enter a UPC code');
-        }
-    });
-    
     // Name search
     searchButton.addEventListener('click', function() {
         const name = nameInput.value.trim();
@@ -168,12 +141,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Enter key support
-    upcInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            scanButton.click();
-        }
-    });
-    
     nameInput.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
             searchButton.click();
@@ -200,25 +167,6 @@ async function searchFoodByName(name) {
     }
 }
 
-async function searchFoodByUPC(upc) {
-    const resultsDiv = document.getElementById('search-results');
-    resultsDiv.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2">Looking up UPC...</p></div>';
-    
-    try {
-        const response = await fetch(`/api/food/search-upc/${upc}`);
-        const data = await response.json();
-        
-        if (data.success) {
-            displayFoodSearchResults([data.food]);
-        } else {
-            resultsDiv.innerHTML = `<div class="alert alert-warning">${data.message}</div>`;
-        }
-    } catch (error) {
-        resultsDiv.innerHTML = '<div class="alert alert-danger">Error searching for UPC. Please try again.</div>';
-        console.error('Error searching UPC:', error);
-    }
-}
-
 function displayFoodSearchResults(foods) {
     const resultsDiv = document.getElementById('search-results');
     
@@ -236,16 +184,47 @@ function displayFoodSearchResults(foods) {
         const carbs = Math.round((nutrition.carbs_per_100g || 0) * 10) / 10;
         const fat = Math.round((nutrition.fat_per_100g || 0) * 10) / 10;
         
+        // Enhanced nutritional badges
+        let badges = '';
+        if (nutrition.nutri_score_grade) {
+            badges += `<span class="badge bg-success me-1">${nutrition.nutri_score_grade}</span>`;
+        }
+        if (nutrition.is_vegan) {
+            badges += `<span class="badge bg-success me-1"><i class="fas fa-leaf"></i> Vegan</span>`;
+        } else if (nutrition.is_vegetarian) {
+            badges += `<span class="badge bg-info me-1"><i class="fas fa-seedling"></i> Vegetarian</span>`;
+        }
+        if (nutrition.is_organic) {
+            badges += `<span class="badge bg-warning me-1"><i class="fas fa-certificate"></i> Organic</span>`;
+        }
+        if (nutrition.is_gluten_free) {
+            badges += `<span class="badge bg-primary me-1"><i class="fas fa-wheat"></i> Gluten-Free</span>`;
+        }
+        
+        // Enhanced nutrition display
+        let enhancedNutrition = '';
+        if (nutrition.fiber_per_100g && nutrition.fiber_per_100g > 0) {
+            enhancedNutrition += `<small>Fiber: ${Math.round(nutrition.fiber_per_100g * 10) / 10}g</small><br>`;
+        }
+        if (nutrition.vitamin_c_per_100g && nutrition.vitamin_c_per_100g > 0) {
+            enhancedNutrition += `<small>Vitamin C: ${Math.round(nutrition.vitamin_c_per_100g)}mg</small><br>`;
+        }
+        if (nutrition.omega_3_per_100g && nutrition.omega_3_per_100g > 0) {
+            enhancedNutrition += `<small>Omega-3: ${Math.round(nutrition.omega_3_per_100g * 100) / 100}g</small><br>`;
+        }
+        
         html += `
             <div class="col-md-6 mb-3">
                 <div class="card h-100">
                     <div class="card-body">
                         <h6 class="card-title">${food.name}</h6>
                         ${food.brand ? `<p class="text-muted small mb-2">Brand: ${food.brand}</p>` : ''}
+                        ${badges ? `<div class="mb-2">${badges}</div>` : ''}
                         <div class="nutrition-info mb-3">
                             <small class="text-muted">Per 100g:</small><br>
                             <strong>${calories} cal</strong><br>
-                            <small>P: ${protein}g | C: ${carbs}g | F: ${fat}g</small>
+                            <small>P: ${protein}g | C: ${carbs}g | F: ${fat}g</small><br>
+                            ${enhancedNutrition}
                         </div>
                         <button class="btn btn-primary btn-sm w-100" onclick="logFood(${food.id}, '${food.name.replace(/'/g, "\\'")}')">
                             <i class="fas fa-plus me-1"></i>Log This Food

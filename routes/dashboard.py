@@ -1,9 +1,8 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request
 from flask_login import login_required, current_user
 from models import db, FoodLog, DailyPlan, AIRecommendation
 from datetime import datetime, date, timedelta
 from sqlalchemy import func, and_, or_
-import json
 
 dashboard_bp = Blueprint('dashboard', __name__)
 

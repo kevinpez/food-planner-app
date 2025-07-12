@@ -118,6 +118,16 @@
                         </div>
                     </div>
                     
+                    {% set total_fiber = nutrition_data.values()|sum(attribute='fiber') %}
+                    {% set avg_fiber = (total_fiber / total_days) if total_days > 0 else 0 %}
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Average Fiber</span>
+                            <strong>{{ "%.1f"|format(avg_fiber) }}g</strong>
+                        </div>
+                    </div>
+                    
                     <hr>
                     
                     <div class="text-center">

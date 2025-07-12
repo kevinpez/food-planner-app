@@ -1,6 +1,5 @@
 import re
 import bleach
-from flask import current_app
 
 def sanitize_input(text):
     """Sanitize user input to prevent XSS attacks"""

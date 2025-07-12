@@ -72,7 +72,31 @@
             <div class="card-body">
                 {% set nutrition = food_log.food.get_nutrition_data() %}
                 {% if nutrition %}
-                    <div class="row text-center">
+                    <!-- Quality Scores -->
+                    {% if nutrition.get('nutri_score_grade') or nutrition.get('nova_group') %}
+                        <div class="row mb-3">
+                            {% if nutrition.get('nutri_score_grade') %}
+                                <div class="col-6">
+                                    <div class="text-center">
+                                        <span class="badge bg-success fs-6">{{ nutrition.nutri_score_grade }}</span>
+                                        <br><small class="text-muted">Nutri-Score</small>
+                                    </div>
+                                </div>
+                            {% endif %}
+                            {% if nutrition.get('nova_group') and nutrition.nova_group > 0 %}
+                                <div class="col-6">
+                                    <div class="text-center">
+                                        <span class="badge bg-info fs-6">{{ nutrition.nova_group|int }}</span>
+                                        <br><small class="text-muted">NOVA Group</small>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <hr>
+                    {% endif %}
+
+                    <!-- Basic Macros -->
+                    <div class="row text-center mb-3">
                         {% if nutrition.get('calories_per_100g') %}
                             <div class="col-6 col-md-3 mb-2">
                                 <strong>{{ nutrition.calories_per_100g }}</strong>
@@ -101,6 +125,144 @@
                             </div>
                         {% endif %}
                     </div>
+
+                    <!-- Detailed Fats -->
+                    {% if nutrition.get('saturated_fat_per_100g') or nutrition.get('omega_3_per_100g') %}
+                        <div class="accordion" id="nutritionAccordion">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fatsCollapse">
+                                        <i class="fas fa-oil-can me-2"></i>Detailed Fats
+                                    </button>
+                                </h2>
+                                <div id="fatsCollapse" class="accordion-collapse collapse" data-bs-parent="#nutritionAccordion">
+                                    <div class="accordion-body">
+                                        <div class="row text-center">
+                                            {% if nutrition.get('saturated_fat_per_100g') and nutrition.saturated_fat_per_100g > 0 %}
+                                                <div class="col-6 col-md-4 mb-2">
+                                                    <strong>{{ "%.1f"|format(nutrition.saturated_fat_per_100g) }}g</strong>
+                                                    <br><small class="text-muted">Saturated Fat</small>
+                                                </div>
+                                            {% endif %}
+                                            {% if nutrition.get('omega_3_per_100g') and nutrition.omega_3_per_100g > 0 %}
+                                                <div class="col-6 col-md-4 mb-2">
+                                                    <strong>{{ "%.2f"|format(nutrition.omega_3_per_100g) }}g</strong>
+                                                    <br><small class="text-muted">Omega-3</small>
+                                                </div>
+                                            {% endif %}
+                                            {% if nutrition.get('omega_6_per_100g') and nutrition.omega_6_per_100g > 0 %}
+                                                <div class="col-6 col-md-4 mb-2">
+                                                    <strong>{{ "%.2f"|format(nutrition.omega_6_per_100g) }}g</strong>
+                                                    <br><small class="text-muted">Omega-6</small>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Vitamins -->
+                            {% if nutrition.get('vitamin_c_per_100g') or nutrition.get('vitamin_d_per_100g') %}
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#vitaminsCollapse">
+                                            <i class="fas fa-pills me-2"></i>Vitamins
+                                        </button>
+                                    </h2>
+                                    <div id="vitaminsCollapse" class="accordion-collapse collapse" data-bs-parent="#nutritionAccordion">
+                                        <div class="accordion-body">
+                                            <div class="row text-center">
+                                                {% for vitamin, label in [
+                                                    ('vitamin_c_per_100g', 'Vitamin C'),
+                                                    ('vitamin_d_per_100g', 'Vitamin D'),
+                                                    ('vitamin_a_per_100g', 'Vitamin A'),
+                                                    ('vitamin_b12_per_100g', 'Vitamin B12'),
+                                                    ('vitamin_e_per_100g', 'Vitamin E')
+                                                ] %}
+                                                    {% if nutrition.get(vitamin) and nutrition[vitamin] > 0 %}
+                                                        <div class="col-6 col-md-4 mb-2">
+                                                            <strong>{{ "%.1f"|format(nutrition[vitamin]) }}{{ 'mg' if 'c' in vitamin or 'e' in vitamin else 'μg' }}</strong>
+                                                            <br><small class="text-muted">{{ label }}</small>
+                                                        </div>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+
+                            <!-- Minerals -->
+                            {% if nutrition.get('calcium_per_100g') or nutrition.get('iron_per_100g') %}
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#mineralsCollapse">
+                                            <i class="fas fa-gem me-2"></i>Minerals
+                                        </button>
+                                    </h2>
+                                    <div id="mineralsCollapse" class="accordion-collapse collapse" data-bs-parent="#nutritionAccordion">
+                                        <div class="accordion-body">
+                                            <div class="row text-center">
+                                                {% for mineral, label in [
+                                                    ('calcium_per_100g', 'Calcium'),
+                                                    ('iron_per_100g', 'Iron'),
+                                                    ('potassium_per_100g', 'Potassium'),
+                                                    ('magnesium_per_100g', 'Magnesium'),
+                                                    ('zinc_per_100g', 'Zinc')
+                                                ] %}
+                                                    {% if nutrition.get(mineral) and nutrition[mineral] > 0 %}
+                                                        <div class="col-6 col-md-4 mb-2">
+                                                            <strong>{{ "%.1f"|format(nutrition[mineral]) }}mg</strong>
+                                                            <br><small class="text-muted">{{ label }}</small>
+                                                        </div>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    <!-- Dietary Info -->
+                    {% if nutrition.get('is_vegan') or nutrition.get('is_vegetarian') or nutrition.get('is_organic') or nutrition.get('is_gluten_free') %}
+                        <hr>
+                        <h6>Dietary Information</h6>
+                        <div class="row">
+                            {% if nutrition.get('is_vegan') %}
+                                <div class="col-6 col-md-3 mb-1">
+                                    <span class="badge bg-success"><i class="fas fa-leaf me-1"></i>Vegan</span>
+                                </div>
+                            {% elif nutrition.get('is_vegetarian') %}
+                                <div class="col-6 col-md-3 mb-1">
+                                    <span class="badge bg-info"><i class="fas fa-seedling me-1"></i>Vegetarian</span>
+                                </div>
+                            {% endif %}
+                            {% if nutrition.get('is_organic') %}
+                                <div class="col-6 col-md-3 mb-1">
+                                    <span class="badge bg-warning"><i class="fas fa-certificate me-1"></i>Organic</span>
+                                </div>
+                            {% endif %}
+                            {% if nutrition.get('is_gluten_free') %}
+                                <div class="col-6 col-md-3 mb-1">
+                                    <span class="badge bg-primary"><i class="fas fa-wheat me-1"></i>Gluten-Free</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    <!-- Allergens -->
+                    {% if nutrition.get('allergens') and nutrition.allergens %}
+                        <hr>
+                        <h6>Allergens</h6>
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            {% for allergen in nutrition.allergens %}
+                                <span class="badge bg-danger me-1">{{ allergen.replace('en:', '').title() }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 {% else %}
                     <p class="text-muted text-center">No detailed nutrition information available</p>
                 {% endif %}
